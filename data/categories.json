@@ -1,0 +1,34 @@
+[
+  {
+    "id": "cat-1",
+    "name": "Network",
+    "description": "Networking equipment and devices",
+    "createdDate": "2024-01-01",
+    "subcategories": [
+      {
+        "id": "cat-1-1",
+        "name": "Storage",
+        "description": "Network Storage Devices",
+        "createdDate": "2024-01-01"
+      }
+    ]
+  },
+  {
+    "id": "cat-2",
+    "name": "Computing",
+    "description": "Computers and components",
+    "createdDate": "2024-01-01"
+  },
+  {
+    "id": "cat-3",
+    "name": "Camera",
+    "description": "Cameras and photography equipment",
+    "createdDate": "2024-01-01"
+  },
+  {
+    "id": "cat-1752516626533",
+    "name": "HDD",
+    "description": "Save your data",
+    "createdDate": "2025-07-14"
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "admin-001",
+    "email": "admin@friendsitzone.com",
+    "password": "@Pranto2050",
+    "role": "admin",
+    "points": 0,
+    "purchaseHistory": [],
+    "name": "System Administrator"
+  }
+]
