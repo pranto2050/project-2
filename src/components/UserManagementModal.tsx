@@ -214,6 +214,57 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </div>
           )}
 
+          {/* Users List - Show by default */}
+          <div className="space-y-4 mb-6">
+            <h3 className="text-xl font-bold text-white">All Users ({users.length})</h3>
+            
+            {users.map(user => {
+              const RoleIcon = getRoleIcon(user.role);
+              return (
+                <div
+                  key={user.id}
+                  className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/30 rounded-xl p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all duration-300"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                      <RoleIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-semibold">{user.name}</h4>
+                      <p className="text-slate-400 text-sm">{user.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`text-xs px-2 py-1 rounded border ${getRoleColor(user.role)}`}>
+                          {user.role.toUpperCase()}
+                        </span>
+                        <span className="text-slate-500 text-xs">
+                          {user.points} points
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEditUser(user)}
+                      className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg border border-blue-500/30 transition-all duration-300"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    
+                    {user.id !== currentUser.id && (
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           {showCreateForm && (
             <div>
               <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-4 mb-4">
@@ -301,57 +352,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </div>
             </div>
           )}
-
-          {/* Users List */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-white">All Users ({users.length})</h3>
-            
-            {users.map(user => {
-              const RoleIcon = getRoleIcon(user.role);
-              return (
-                <div
-                  key={user.id}
-                  className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/30 rounded-xl p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all duration-300"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-                      <RoleIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-semibold">{user.name}</h4>
-                      <p className="text-slate-400 text-sm">{user.email}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className={`text-xs px-2 py-1 rounded border ${getRoleColor(user.role)}`}>
-                          {user.role.toUpperCase()}
-                        </span>
-                        <span className="text-slate-500 text-xs">
-                          {user.points} points
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEditUser(user)}
-                      className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg border border-blue-500/30 transition-all duration-300"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    
-                    {user.id !== currentUser.id && (
-                      <button
-                        onClick={() => handleDeleteUser(user)}
-                        className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         {/* Footer */}
