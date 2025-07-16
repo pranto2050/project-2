@@ -316,14 +316,13 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, saleData?: any) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, updatedItems?: any[], customerDetails?: { mobile: string; email: string; address: string }) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
     setLastReceiptNumber(receiptNumber);
 
-    const itemsToProcess = salesItems;
-    const customerInfo = saleData?.customerInfo;
+    const itemsToProcess = updatedItems || salesItems;
 
     try {
       for (const item of itemsToProcess) {
@@ -331,11 +330,11 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         await updateStock(item.product.id, item.product.stock - item.quantity);
 
         // Create sale record with seller information
-        const saleRecord = {
+        const saleData = {
           productId: item.product.id,
           productName: item.product.name,
-          customerId: saleData?.customerId || user.id,
-          customerEmail: customerInfo?.email || user.email,
+          customerId: user.id,
+          customerEmail: user.email,
           quantity: item.quantity,
           pricePerUnit: item.product.pricePerUnit,
           totalPrice: item.totalPrice,
@@ -354,11 +353,10 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
           sellerId: user.id,
           sellerName: user.name,
           sellerRole: user.role,
-          customer: customerInfo ? {
-            name: customerInfo.name,
-            mobile: customerInfo.mobile,
-            email: customerInfo.email,
-            address: customerInfo.address
+          customer: customerDetails ? {
+            mobile: customerDetails.mobile,
+            email: customerDetails.email,
+            address: customerDetails.address
           } : undefined
         };
 
@@ -368,7 +366,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(saleRecord)
+          body: JSON.stringify(saleData)
         });
 
         if (!result.ok) {

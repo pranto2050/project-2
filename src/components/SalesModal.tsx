@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { X, Download, Trash2, ShoppingBag, Calendar, Shield, User } from 'lucide-react';
+import { X, Download, Trash2, ShoppingBag, Calendar, Shield } from 'lucide-react';
 import { SaleItem } from '../types';
 import { downloadSalesData } from '../utils/storage';
-import { addCustomer } from '../utils/storage';
 
 interface SalesModalProps {
   isOpen: boolean;
   onClose: () => void;
   salesItems: SaleItem[];
   onRemoveItem: (productId: string) => void;
-  onCompleteSale: (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, saleData?: any) => void;
+  onCompleteSale: (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }) => void;
 }
 
 const SalesModal: React.FC<SalesModalProps> = ({
@@ -21,13 +20,6 @@ const SalesModal: React.FC<SalesModalProps> = ({
 }) => {
   const [customDateTime, setCustomDateTime] = useState('');
   const [useCustomDateTime, setUseCustomDateTime] = useState(false);
-  
-  // Customer fields
-  const [customerName, setCustomerName] = useState('');
-  const [customerMobile, setCustomerMobile] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [isRequiredCustomer, setIsRequiredCustomer] = useState(false);
   
   // Warranty fields
   const [dateOfSale, setDateOfSale] = useState(new Date().toISOString().split('T')[0]);
@@ -44,36 +36,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
     downloadSalesData();
   };
 
-  const handleCompleteSale = async () => {
-    // Validate required customer mobile if customer info is provided
-    if ((customerName || customerEmail || customerAddress) && !customerMobile) {
-      alert('Mobile number is required when adding customer information');
-      return;
-    }
-
-    // Save customer if any customer information is provided
-    let customerId = null;
-    if (customerMobile) {
-      try {
-        const customerData = {
-          name: customerName || '',
-          mobile: customerMobile,
-          email: customerEmail || '',
-          address: customerAddress || '',
-          isRequiredCustomer
-        };
-        
-        const savedCustomer = await addCustomer(customerData);
-        if (savedCustomer) {
-          customerId = savedCustomer.id;
-          console.log('Customer saved with ID:', customerId);
-        }
-      } catch (error) {
-        console.error('Failed to save customer:', error);
-        alert('Failed to save customer information. Sale will continue without customer data.');
-      }
-    }
-
+  const handleCompleteSale = () => {
     const dateTimeToUse = useCustomDateTime && customDateTime ? customDateTime : undefined;
     
     // Calculate warranty end date
@@ -107,18 +70,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
       warrantyEndDate
     };
     
-    // Include customer info in the sale completion
-    const saleData = {
-      customerId,
-      customerInfo: customerMobile ? {
-        name: customerName,
-        mobile: customerMobile,
-        email: customerEmail,
-        address: customerAddress
-      } : null
-    };
-    
-    onCompleteSale(dateTimeToUse, warrantyInfo, saleData);
+    onCompleteSale(dateTimeToUse, warrantyInfo);
   };
 
   const getCurrentDateTime = () => {
@@ -133,9 +85,9 @@ const SalesModal: React.FC<SalesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-b border-white/10 p-6 sticky top-0 z-10">
+        <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-b border-white/10 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
@@ -156,7 +108,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 max-h-[60vh] overflow-y-auto">
           {salesItems.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -243,106 +195,6 @@ const SalesModal: React.FC<SalesModalProps> = ({
                   </span>
                 </div>
               )}
-            </div>
-
-            {/* Customer Information Section */}
-            <div className="mt-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-500 rounded-lg flex items-center justify-center">
-                  <User className="w-6 h-6 text-slate-900" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Customer Information</h3>
-                  <p className="text-slate-400 text-sm">Add customer details for this sale (optional)</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Name */}
-                <div>
-                  <label className="block text-slate-400 text-sm mb-2">Customer Name</label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
-                  />
-                </div>
-
-                {/* Mobile Number - Required */}
-                <div>
-                  <label className="block text-slate-400 text-sm mb-2">
-                    Mobile Number <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={customerMobile}
-                    onChange={(e) => setCustomerMobile(e.target.value)}
-                    placeholder="Enter mobile number"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
-                  />
-                  <p className="text-slate-500 text-xs mt-1">Required if adding customer information</p>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-slate-400 text-sm mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Enter email address"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
-                  />
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-slate-400 text-sm mb-2">Address</label>
-                  <input
-                    type="text"
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    placeholder="Enter customer address"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
-                  />
-                </div>
-
-                {/* Required Customer Checkbox */}
-                <div className="md:col-span-2">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="isRequiredCustomer"
-                      checked={isRequiredCustomer}
-                      onChange={(e) => setIsRequiredCustomer(e.target.checked)}
-                      className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <label htmlFor="isRequiredCustomer" className="text-slate-400 text-sm">
-                      Mark as required customer (VIP/Regular customer)
-                    </label>
-                  </div>
-                </div>
-
-                {/* Customer Preview */}
-                {customerMobile && (
-                  <div className="md:col-span-2 bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <User className="w-4 h-4 text-purple-400" />
-                      <span className="text-purple-400 font-medium">Customer Preview</span>
-                    </div>
-                    <div className="text-sm text-slate-300 space-y-1">
-                      <p>Name: <span className="text-white font-medium">{customerName || 'N/A'}</span></p>
-                      <p>Mobile: <span className="text-white font-medium">{customerMobile}</span></p>
-                      <p>Email: <span className="text-white font-medium">{customerEmail || 'N/A'}</span></p>
-                      <p>Address: <span className="text-white font-medium">{customerAddress || 'N/A'}</span></p>
-                      <p>Status: <span className="text-white font-medium">{isRequiredCustomer ? 'VIP/Regular' : 'Regular'}</span></p>
-                      <p className="text-purple-400 text-xs mt-2">Customer ID will be auto-generated: {Date.now()}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Warranty Information Section */}

@@ -12,6 +12,8 @@ export interface Product {
   id: string;
   name: string;
   brand?: string;
+  brandDescription?: string; // Auto-populated from brand database
+  brandLogo?: string; // Auto-populated from brand database
   supplier?: string;
   addedDate: string;
   pricePerUnit: number;

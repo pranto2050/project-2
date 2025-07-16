@@ -23,7 +23,6 @@ const FILES = {
   administrators: path.join(DATA_DIR, 'administrators.json'),
   categories: path.join(DATA_DIR, 'categories.json'),
   brands: path.join(DATA_DIR, 'brands.json'),
-  customers: path.join(DATA_DIR, 'customers.json'),
   sales: path.join(DATA_DIR, 'sales.json'),
   purchases: path.join(DATA_DIR, 'purchases.json'),
   returns: path.join(DATA_DIR, 'returns.json'),
@@ -681,72 +680,6 @@ app.delete('/api/brands/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting brand:', error);
     res.status(500).json({ success: false, message: 'Failed to delete brand' });
-  }
-});
-
-// Customers API
-app.get('/api/customers', async (req, res) => {
-  try {
-    const customers = await readJsonFile(FILES.customers);
-    res.json(customers); // Return array directly
-  } catch (error) {
-    console.error('Error fetching customers:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch customers' });
-  }
-});
-
-app.post('/api/customers', async (req, res) => {
-  try {
-    const customers = await readJsonFile(FILES.customers);
-    const newCustomer = { ...req.body, id: Date.now().toString(), createdDate: new Date().toISOString() };
-    customers.push(newCustomer);
-    
-    if (await writeJsonFile(FILES.customers, customers)) {
-      res.status(201).json({ success: true, customer: newCustomer });
-    } else {
-      res.status(500).json({ success: false, message: 'Failed to add customer' });
-    }
-  } catch (error) {
-    console.error('Error adding customer:', error);
-    res.status(500).json({ success: false, message: 'Failed to add customer' });
-  }
-});
-
-app.put('/api/customers/:id', async (req, res) => {
-  try {
-    const customers = await readJsonFile(FILES.customers);
-    const customerIndex = customers.findIndex(c => c.id === req.params.id);
-    
-    if (customerIndex === -1) {
-      return res.status(404).json({ success: false, message: 'Customer not found' });
-    }
-    
-    customers[customerIndex] = { ...customers[customerIndex], ...req.body };
-    
-    if (await writeJsonFile(FILES.customers, customers)) {
-      res.json({ success: true, customer: customers[customerIndex] });
-    } else {
-      res.status(500).json({ success: false, message: 'Failed to update customer' });
-    }
-  } catch (error) {
-    console.error('Error updating customer:', error);
-    res.status(500).json({ success: false, message: 'Failed to update customer' });
-  }
-});
-
-app.delete('/api/customers/:id', async (req, res) => {
-  try {
-    const customers = await readJsonFile(FILES.customers);
-    const filteredCustomers = customers.filter(c => c.id !== req.params.id);
-    
-    if (await writeJsonFile(FILES.customers, filteredCustomers)) {
-      res.json({ success: true, message: 'Customer deleted successfully' });
-    } else {
-      res.status(500).json({ success: false, message: 'Failed to delete customer' });
-    }
-  } catch (error) {
-    console.error('Error deleting customer:', error);
-    res.status(500).json({ success: false, message: 'Failed to delete customer' });
   }
 });
 

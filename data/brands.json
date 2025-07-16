@@ -1,66 +1,162 @@
 [
   {
-    "id": "brand-tp-link",
+    "id": "brand-1752642416377",
+    "name": "Asus",
+    "description": "This is the global brand",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416378",
     "name": "TP-Link",
-    "description": "Leading provider of networking equipment and WiFi products",
+    "description": "Reliable and affordable networking devices",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "brand-netgear",
+    "id": "brand-1752642416379",
     "name": "Netgear",
-    "description": "Network hardware company providing networking solutions",
+    "description": "Known for high-performance routers and modems",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "brand-asus",
-    "name": "ASUS",
-    "description": "Computer hardware and electronics company",
-    "logoUrl": "",
-    "logoFile": "",
-    "createdDate": "2025-01-14"
-  },
-  {
-    "id": "brand-d-link",
+    "id": "brand-1752642416380",
     "name": "D-Link",
-    "description": "Networking equipment manufacturer",
+    "description": "Offers a range of routers for home and business",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "brand-linksys",
-    "name": "Linksys",
-    "description": "Consumer networking hardware brand",
-    "logoUrl": "",
-    "logoFile": "",
-    "createdDate": "2025-01-14"
-  },
-  {
-    "id": "brand-cisco",
+    "id": "brand-1752642416381",
     "name": "Cisco",
-    "description": "Multinational technology company specializing in networking",
+    "description": "Enterprise-grade network equipment provider",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "brand-ubiquiti",
+    "id": "brand-1752642416382",
+    "name": "Linksys",
+    "description": "Popular for home networking solutions",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416383",
+    "name": "Huawei",
+    "description": "Global brand with advanced wireless technology",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416384",
+    "name": "Tenda",
+    "description": "Budget-friendly networking gear",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416385",
+    "name": "Zyxel",
+    "description": "Delivers business and home networking products",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416386",
     "name": "Ubiquiti",
-    "description": "Enterprise networking and wireless communication products",
+    "description": "High-performance Wi-Fi and networking systems",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "brand-mikrotik",
+    "id": "brand-1752642416387",
     "name": "MikroTik",
-    "description": "Network equipment manufacturer and software company",
+    "description": "Advanced networking for professionals and ISPs",
     "logoUrl": "",
     "logoFile": "",
-    "createdDate": "2025-01-14"
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416388",
+    "name": "TOTOLINK",
+    "description": "Smart Wi-Fi solutions for home and office",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416389",
+    "name": "Belkin",
+    "description": "Consumer electronics and networking devices",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416390",
+    "name": "Edimax",
+    "description": "Networking gear for small businesses and homes",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416391",
+    "name": "Buffalo",
+    "description": "Reliable storage and networking solutions",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416392",
+    "name": "Google Nest",
+    "description": "Smart Wi-Fi systems for homes",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416393",
+    "name": "Amazon Eero",
+    "description": "Mesh Wi-Fi routers with smart home integration",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416394",
+    "name": "ARRIS",
+    "description": "Modems and routers for broadband service",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416395",
+    "name": "Comfast",
+    "description": "Networking devices including repeaters and routers",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752642416396",
+    "name": "Motorola",
+    "description": "Routers and modems for fast home networking",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
   }
 ]

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Package, Tag, DollarSign, Hash, FileText, Fingerprint, Copy, Search } from 'lucide-react';
+import { X, Save, Package, Tag, DollarSign, Hash, FileText, Fingerprint, Copy, Search, Building2 } from 'lucide-react';
 import { Product } from '../types';
 import { getCategories, getBrands } from '../utils/storage';
 import { 
@@ -60,7 +60,20 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [routerBrand, setRouterBrand] = useState('');
 
   const networkItems = ['Router', 'Switch', 'ONU'];
+  // Helper function to auto-populate brand data from database
+  const handleBrandSelection = (selectedBrandName: string) => {
+    const selectedBrandData = brands.find(brand => brand.name === selectedBrandName);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      brand: selectedBrandName,
+      // Auto-populate brand data from database
+      brandDescription: selectedBrandData?.description || '',
+      brandLogo: selectedBrandData?.logoUrl || selectedBrandData?.logoFile || ''
+    }));
+  };
 
+  const networkBrands = ['TP-Link', 'Netgear', 'ASUS', 'D-Link', 'Linksys', 'Cisco', 'Huawei', 'MikroTik', 'Ubiquiti', 'Tenda'];
   
   // Load categories when modal opens
   useEffect(() => {
@@ -73,7 +86,6 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
           ]);
           setCategories(categoriesData);
           setBrands(brandsData);
-          console.log('Loaded brands:', brandsData); // Debug log
         } catch (error) {
           console.error('Failed to load data:', error);
           setCategories([]);
@@ -95,8 +107,14 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
   // Filter brands based on selected category
   const getFilteredBrands = () => {
-    // For now, return all brands since categories aren't assigned to brands yet
-    return brands;
+    if (!formData.category) {
+      return brands; // Show all brands if no category selected
+    }
+    
+    // Filter brands that have the selected category in their categories array
+    return brands.filter(brand => 
+      brand.categories && brand.categories.includes(formData.category)
+    );
   };
 
   const loadExistingProductNames = async (category: string) => {
@@ -173,6 +191,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
         id: Date.now().toString(),
         name: '',
         brand: '',
+        brandDescription: '',
+        brandLogo: '',
         supplier: '',
         addedDate: new Date().toISOString().split('T')[0],
         pricePerUnit: 0,
@@ -408,15 +428,67 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                       <label className="block text-slate-400 text-sm mb-2">Brand</label>
                       <select
                         value={formData.brand}
-                        onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                        onChange={e => {
+                          const selectedBrandName = e.target.value;
+                          handleBrandSelection(selectedBrandName);
+                        }}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
                         required
                       >
                         <option value="" className="bg-slate-800">Select Brand</option>
-                        {getFilteredBrands().map(brand => (
-                          <option key={brand.id} value={brand.name} className="bg-slate-800">{brand.name}</option>
-                        ))}
+                        {brands
+                          .filter(brand => brand.name) // Filter brands that have networking products
+                          .map(brand => (
+                            <option key={brand.id} value={brand.name} className="bg-slate-800">
+                              {brand.name}
+                            </option>
+                          ))}
                       </select>
+                      
+                      {/* Display selected brand info */}
+                      {formData.brand && (
+                        <div className="mt-3 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg">
+                          <div className="flex items-start space-x-3">
+                            {(() => {
+                              const selectedBrand = brands.find(brand => brand.name === formData.brand);
+                              const logoUrl = selectedBrand?.logoUrl || 
+                                            (selectedBrand?.logoFile ? `http://localhost:3001/uploads/logos/${selectedBrand.logoFile}` : null);
+                              
+                              return (
+                                <>
+                                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    {logoUrl ? (
+                                      <img
+                                        src={logoUrl}
+                                        alt={`${formData.brand} logo`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          target.nextElementSibling?.classList.remove('hidden');
+                                        }}
+                                      />
+                                    ) : null}
+                                    <Building2 className={`w-5 h-5 text-slate-900 ${logoUrl ? 'hidden' : ''}`} />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <p className="text-cyan-400 font-semibold">{formData.brand}</p>
+                                      <div className="w-2 h-2 bg-green-400 rounded-full" title="Brand data loaded from database"></div>
+                                    </div>
+                                    {selectedBrand?.description && (
+                                      <p className="text-slate-400 text-sm leading-relaxed">{selectedBrand.description}</p>
+                                    )}
+                                    <p className="text-slate-500 text-xs mt-1">
+                                      Brand data auto-populated • Added {selectedBrand?.createdDate ? new Date(selectedBrand.createdDate).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -548,25 +620,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-slate-400 text-sm mb-2">Brand</label>
-                      <select
-                        name="brand"
-                        value={formData.brand}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                        required
-                      >
-                        <option value="" className="bg-slate-800">Select Brand</option>
-                        {getFilteredBrands().map(brand => (
-                          <option key={brand.id} value={brand.name} className="bg-slate-800">
-                            {brand.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-slate-400 text-sm mb-2">Supplier</label>
                       <input
