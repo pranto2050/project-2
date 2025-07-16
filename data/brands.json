@@ -10,8 +10,8 @@
   {
     "id": "brand-1752642416378",
     "name": "TP-Link",
-    "description": "Reliable and affordable networking devices",
-    "logoUrl": "",
+    "description": "TP-Link is a global provider of networking and smart home products, founded in 1996",
+    "logoUrl": "https://w7.pngwing.com/pngs/347/185/png-transparent-tplink-2-hd-logo-thumbnail.png",
     "logoFile": "",
     "createdDate": "2025-07-16"
   },
@@ -156,6 +156,14 @@
     "name": "Motorola",
     "description": "Routers and modems for fast home networking",
     "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-07-16"
+  },
+  {
+    "id": "brand-1752668309684",
+    "name": "Tenda",
+    "description": "Tenda is a Chinese company that manufactures networking equipment, including routers, switches, and IP cameras",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Tenda_LOGO.png/640px-Tenda_LOGO.png",
     "logoFile": "",
     "createdDate": "2025-07-16"
   }
