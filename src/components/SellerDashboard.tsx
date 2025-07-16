@@ -18,9 +18,8 @@ import {
   X,
   ShoppingBag
 } from 'lucide-react';
-import { User as UserType, Product, SaleRecord, PurchaseRecord, ReturnRecord, Category, DailySales } from '../types';
-import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, addCategory, deleteCategory } from '../utils/storage';
-import { validateUserSession as validateSession } from '../utils/auth';
+import { User as UserType, Product, SaleRecord, ReturnRecord, Category, DailySales, CustomerDetails } from '../types';
+import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories } from '../utils/storage';
 import SalesModal from './SalesModal';
 import ReceiptModal from './ReceiptModal';
 import ProductEditModal from './ProductEditModal';
@@ -44,12 +43,15 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  // Remove unused variables and functions
+  // const [setSortBy] = useState('name');
+  // const [setSortOrder] = useState<'asc' | 'desc'>('asc');
+  // const handleCategoryAdd = async () => { ... };
+  // const netProfit = totalRevenue - totalPurchases - totalReturns;
+  // const handleSeeMore = (product: Product) => { ... };
   
   // Enhanced 3-dropdown filter system
   const [selectedProductType, setSelectedProductType] = useState('');
@@ -66,13 +68,10 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [showPurchaseQuantityModal, setShowPurchaseQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [salesItems, setSalesItems] = useState<any[]>([]);
   const [purchaseItems, setPurchaseItems] = useState<any[]>([]);
   const [notification, setNotification] = useState<string>('');
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [todaysSalesData, setTodaysSalesData] = useState<DailySales>({
     date: new Date().toISOString().split('T')[0],
     sales: [],
@@ -166,7 +165,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
   const loadData = async () => {
     try {
-      const [productsData, categoriesData, salesData, purchasesData, returnsData, todaysSales] = await Promise.all([
+      const [productsData, categoriesData, salesData, , returnsData, todaysSales] = await Promise.all([
         getProducts(),
         getCategories(),
         getSalesLogs(),
@@ -178,7 +177,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       setProducts(productsData);
       setCategories(categoriesData);
       setSales(salesData);
-      setPurchases(purchasesData);
+      // setPurchases(purchasesData); // Not used in seller dashboard
       setReturns(returnsData);
       setTodaysSalesData(todaysSales);
     } catch (error) {
@@ -208,26 +207,8 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const handleProductAdd = async (newProduct: Product) => {
-    try {
-      // For sellers, we'll show a notification that they need admin access
-      showNotification('Product addition requires admin access. Please contact administrator.');
-      setShowProductEditModal(false);
-      setIsEditMode(false);
-      setSelectedProduct(null);
-    } catch (error) {
-      console.error('Error adding product:', error);
-      showNotification('Failed to add product');
-    }
-  };
-
-  const handleProductDelete = async (productId: string) => {
-    showNotification('Product deletion requires admin access. Please contact administrator.');
-  };
-
   const handleProductEdit = (product: Product) => {
     setSelectedProduct(product);
-    setIsEditMode(true);
     setShowProductEditModal(true);
   };
 
@@ -304,13 +285,13 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, updatedItems?: any[], customerDetails?: { mobile: string; email: string; address: string }) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: CustomerDetails) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
     setLastReceiptNumber(receiptNumber);
 
-    const itemsToProcess = updatedItems || salesItems;
+    const itemsToProcess = salesItems;
 
     try {
       for (const item of itemsToProcess) {
@@ -378,58 +359,8 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const completePurchase = (customDateTime?: string) => {
+  const completePurchase = (_customDateTime?: string) => {
     showNotification('Purchase completion requires admin access. Please contact administrator.');
-  };
-
-  const handleReturnProcess = (productId: string, quantity: number, reason: string) => {
-    showNotification('Return processing requires admin access. Please contact administrator.');
-  };
-
-  const handleCategoryAdd = async () => {
-    if (!newCategoryName.trim()) {
-      showNotification('Please enter a category name');
-      return;
-    }
-
-    try {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name: newCategoryName.trim(),
-        description: newCategoryDescription.trim(),
-        createdDate: new Date().toISOString().split('T')[0]
-      };
-
-      const success = await addCategory(newCategory);
-      if (success) {
-        await loadData();
-        setNewCategoryName('');
-        setNewCategoryDescription('');
-        showNotification('Category added successfully');
-      } else {
-        showNotification('Category already exists');
-      }
-    } catch (error) {
-      console.error('Error adding category:', error);
-      showNotification('Failed to add category');
-    }
-  };
-
-  const handleCategoryDelete = async (categoryId: string) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      try {
-        const success = await deleteCategory(categoryId);
-        if (success) {
-          await loadData();
-          showNotification('Category deleted successfully');
-        } else {
-          showNotification('Failed to delete category');
-        }
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        showNotification('Failed to delete category');
-      }
-    }
   };
 
   const filteredProducts = products.filter(product => 
@@ -439,30 +370,9 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
      product.name.toLowerCase().includes(selectedProductType.toLowerCase()) ||
      (product.networkItem && product.networkItem.toLowerCase().includes(selectedProductType.toLowerCase()))) &&
     (selectedBrand === '' || (product.brand && product.brand.toLowerCase().includes(selectedBrand.toLowerCase())))
-  ).sort((a, b) => {
-    let aValue = a[sortBy as keyof Product];
-    let bValue = b[sortBy as keyof Product];
-    
-    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
-    if (sortOrder === 'asc') {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-    }
-  });
+  );
 
-  const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0);
-  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.totalCost, 0);
-  const totalReturns = returns.reduce((sum, returnRecord) => sum + returnRecord.totalRefund, 0);
-  const netProfit = totalRevenue - totalPurchases - totalReturns;
   const lowStockProducts = products.filter(p => p.stock <= 10);
-
-  const handleSeeMore = (product: Product) => {
-    setSelectedProduct(product);
-    setShowProductDetailModal(true);
-  };
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -717,7 +627,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                           <Edit className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => handleProductDelete(product.id)}
+                          onClick={() => showNotification('Product deletion requires admin access. Please contact administrator.')}
                           className="p-2 hover:bg-red-500/20 rounded-lg text-red-400"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -820,7 +730,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         )}
 
         {activeTab === 'sold-products' && (
-          <SoldProducts products={products} />
+          <SoldProducts sales={sales} />
         )}
 
         {activeTab === 'purchases' && (
@@ -926,14 +836,14 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
             {returns.map((returnRecord, index) => (
               <div key={index} className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-4 mb-4 shadow-lg shadow-cyan-500/10">
-                <h3 className="text-lg font-bold text-white mb-2">Return #{returnRecord.id.substring(0, 8)}</h3>
+                <h3 className="text-lg font-bold text-white mb-2">Return #{returnRecord.productID.substring(0, 8)}</h3>
                 <p className="text-slate-400 text-sm mb-2">Date: {new Date(returnRecord.timestamp).toLocaleDateString()}</p>
-                <p className="text-slate-400 text-sm mb-2">Customer: {returnRecord.customerName || 'N/A'}</p>
-                <p className="text-slate-400 text-sm mb-2">Reason: {returnRecord.reason}</p>
+                <p className="text-slate-400 text-sm mb-2">Product: {returnRecord.productName}</p>
+                <p className="text-slate-400 text-sm mb-2">Reason: {returnRecord.reason || 'N/A'}</p>
                 <p className="text-slate-400 text-sm mb-2">Total Refund: ৳{returnRecord.totalRefund.toLocaleString()}</p>
                 <div className="flex items-center space-x-2 mt-4">
                   <button
-                    onClick={() => handleReturnProcess(returnRecord.productId, returnRecord.quantity, returnRecord.reason)}
+                    onClick={() => showNotification('Return processing requires admin access. Please contact administrator.')}
                     className="flex items-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
                   >
                     <AlertTriangle className="w-4 h-4" />
@@ -946,7 +856,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         )}
 
         {activeTab === 'warranty' && (
-          <WarrantyManagement products={products} />
+          <WarrantyManagement user={user} />
         )}
 
         {activeTab === 'categories' && (
@@ -980,7 +890,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                       <td className="py-3 px-4 text-slate-300">{new Date(category.createdDate).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-slate-400 flex space-x-2">
                         <button
-                          onClick={() => handleCategoryDelete(category.id)}
+                          onClick={() => showNotification('Category deletion requires admin access. Please contact administrator.')}
                           className="p-2 hover:bg-red-500/20 rounded-lg text-red-400"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -1027,10 +937,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             isOpen={showProductEditModal}
             onClose={() => setShowProductEditModal(false)}
             product={selectedProduct}
-            isEditMode={isEditMode}
             onSave={handleProductUpdate}
-            onAdd={handleProductAdd}
-            onDelete={handleProductDelete}
           />
         )}
 
@@ -1040,8 +947,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             isOpen={showProductDetailModal}
             onClose={() => setShowProductDetailModal(false)}
             product={selectedProduct}
-            onEdit={handleProductEdit}
-            onUpdate={handleProductUpdate}
           />
         )}
 
@@ -1081,8 +986,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
           <ReturnModal
             isOpen={showReturnModal}
             onClose={() => setShowReturnModal(false)}
-            returns={returns}
-            onProcessReturn={handleReturnProcess}
+            onProcessReturn={() => showNotification('Return processing requires admin access. Please contact administrator.')}
           />
         )}
       </div>
