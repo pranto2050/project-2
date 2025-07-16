@@ -40,7 +40,6 @@ import {
   Users, 
   LogOut, 
   Plus, 
-  Search, 
   Filter,
   BarChart3,
   Calendar,
@@ -494,7 +493,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       (!selectedSubcategory || product.subcategory === selectedSubcategory) &&
       (!selectedBrand || product.brand === selectedBrand) &&
       (!selectedModel || product.model === selectedModel) &&
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (searchTerm.trim() === '' || 
+       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       product.id.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     )
     .sort((a, b) => {
       let aValue = a[sortBy as keyof Product];
@@ -773,19 +775,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             </div>
 
             {/* Filter/Search Bar */}
-            <div className="bg-slate-800/60 border border-cyan-500/20 rounded-2xl p-6 mb-8 shadow-lg flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative w-full md:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-cyan-400" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full md:w-64 pl-10 pr-4 py-3 bg-white/10 border border-cyan-400/20 rounded-lg text-white placeholder-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-                />
-              </div>
+            <div className="mb-8">
               <ProductFilterBar
                 products={products}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 selectedSubcategory={selectedSubcategory}

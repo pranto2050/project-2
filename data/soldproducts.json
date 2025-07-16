@@ -54,5 +54,33 @@
     "userEmail": "a@gmail.com",
     "saleDate": "2025-07-16",
     "soldBy": "admin-1752640309387"
+  },
+  {
+    "id": "sold-1752647991275",
+    "productID": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "quantitySold": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "timestamp": "2025-07-16T06:39:51.271Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-1752640309387"
+  },
+  {
+    "id": "sold-1752648032314",
+    "productID": "IT2025-1752642774488",
+    "productName": "zZVZ",
+    "quantitySold": 1,
+    "pricePerUnit": 10,
+    "totalPrice": 10,
+    "unit": "Piece",
+    "timestamp": "2025-07-16T06:40:32.311Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-1752640309387"
   }
 ]

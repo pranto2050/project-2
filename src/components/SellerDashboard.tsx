@@ -4,35 +4,21 @@ import {
   Plus, 
   ShoppingCart, 
   Package, 
-  Users, 
   TrendingUp, 
-  Search,
   Filter,
-  Calendar,
-  DollarSign,
   User,
   Building2,
   BarChart3,
   RefreshCw,
   Shield,
-  Eye,
   Edit,
   Trash2,
-  Tag,
-  Monitor,
-  Cpu,
-  HardDrive,
-  Wifi,
-  Star,
   AlertTriangle,
   X,
-  ShoppingBag,
-  Key,
-  Copy
+  ShoppingBag
 } from 'lucide-react';
 import { User as UserType, Product, SaleRecord, PurchaseRecord, ReturnRecord, Category, DailySales } from '../types';
 import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, addCategory, deleteCategory } from '../utils/storage';
-import { validateUserSession as validateSession } from '../utils/auth';
 import SalesModal from './SalesModal';
 import ReceiptModal from './ReceiptModal';
 import ProductEditModal from './ProductEditModal';
@@ -44,6 +30,7 @@ import SoldProducts from './SoldProducts';
 import BrandManagement from './BrandManagement';
 import PurchaseModal from './PurchaseModal';
 import ReturnModal from './ReturnModal';
+import ProductFilterBar from './ProductFilterBar';
 
 interface SellerDashboardProps {
   user: UserType;
@@ -60,14 +47,11 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  
-  // Enhanced 3-dropdown filter system
-  const [selectedProductType, setSelectedProductType] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
-  const [productTypes, setProductTypes] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [sortBy] = useState('name');
+  const [sortOrder] = useState<'asc' | 'desc'>('asc');
   
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -94,47 +78,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [completedSaleItems, setCompletedSaleItems] = useState<any[]>([]);
   const [completedCustomerDetails, setCompletedCustomerDetails] = useState<any>(null);
 
-  // Product type and brand data structure
-  const productTypeData: { [category: string]: string[] } = {
-    'Network': ['Router', 'Switch', 'ONU', 'Access Point', 'Modem', 'Network Card'],
-    'Storage': ['SSD', 'HDD', 'USB Drive', 'Memory Card', 'External Drive', 'NAS'],
-    'Computing': ['CPU', 'GPU', 'RAM', 'Motherboard', 'Power Supply', 'Cooling'],
-    'Peripheral': ['Mouse', 'Keyboard', 'Monitor', 'Speaker', 'Webcam', 'Printer'],
-    'Camera': ['DSLR', 'Mirrorless', 'Action Camera', 'Webcam', 'Security Camera'],
-    'Router': ['Wireless Router', 'Gaming Router', 'Mesh Router', 'Travel Router']
-  };
-
-  const brandData: { [productType: string]: string[] } = {
-    'Router': ['TP-Link', 'MikroTik', 'Netgear', 'D-Link', 'Cisco', 'Asus', 'Huawei', 'Linksys'],
-    'Switch': ['Cisco', 'HP', 'Dell', 'Netgear', 'TP-Link', 'MikroTik', 'Juniper'],
-    'ONU': ['Huawei', 'ZTE', 'Alcatel', 'Nokia', 'Ericsson', 'Cisco'],
-    'Access Point': ['Ubiquiti', 'Cisco', 'Aruba', 'Ruckus', 'TP-Link', 'Netgear'],
-    'Modem': ['Huawei', 'ZTE', 'Motorola', 'Netgear', 'TP-Link', 'D-Link'],
-    'Network Card': ['Intel', 'Realtek', 'Broadcom', 'Qualcomm', 'Marvell'],
-    'SSD': ['Samsung', 'WD', 'Crucial', 'Kingston', 'SanDisk', 'Intel', 'ADATA'],
-    'HDD': ['Seagate', 'WD', 'Toshiba', 'Hitachi', 'Samsung'],
-    'USB Drive': ['SanDisk', 'Kingston', 'Samsung', 'WD', 'PNY', 'ADATA'],
-    'Memory Card': ['SanDisk', 'Samsung', 'Kingston', 'Lexar', 'PNY', 'ADATA'],
-    'External Drive': ['WD', 'Seagate', 'Samsung', 'Toshiba', 'LaCie'],
-    'NAS': ['Synology', 'QNAP', 'WD', 'Seagate', 'Asustor', 'Terramaster'],
-    'CPU': ['Intel', 'AMD', 'ARM'],
-    'GPU': ['NVIDIA', 'AMD', 'Intel'],
-    'RAM': ['Corsair', 'G.Skill', 'Kingston', 'Crucial', 'ADATA', 'Team Group'],
-    'Motherboard': ['ASUS', 'MSI', 'Gigabyte', 'ASRock', 'Intel', 'Biostar'],
-    'Power Supply': ['Corsair', 'EVGA', 'Seasonic', 'Cooler Master', 'Thermaltake'],
-    'Cooling': ['Noctua', 'Corsair', 'Cooler Master', 'be quiet!', 'Arctic', 'NZXT'],
-    'Mouse': ['Logitech', 'Razer', 'SteelSeries', 'Corsair', 'Microsoft', 'HP'],
-    'Keyboard': ['Logitech', 'Razer', 'Corsair', 'SteelSeries', 'Cherry', 'Ducky'],
-    'Monitor': ['Samsung', 'LG', 'Dell', 'ASUS', 'Acer', 'BenQ', 'ViewSonic'],
-    'Speaker': ['Logitech', 'Creative', 'Bose', 'JBL', 'Harman Kardon', 'Klipsch'],
-    'Webcam': ['Logitech', 'Microsoft', 'Razer', 'Creative', 'HP', 'Dell'],
-    'Printer': ['HP', 'Canon', 'Epson', 'Brother', 'Samsung', 'Xerox'],
-    'DSLR': ['Canon', 'Nikon', 'Sony', 'Pentax', 'Fujifilm'],
-    'Mirrorless': ['Sony', 'Canon', 'Nikon', 'Fujifilm', 'Panasonic', 'Olympus'],
-    'Action Camera': ['GoPro', 'DJI', 'Sony', 'Garmin', 'Insta360'],
-    'Security Camera': ['Hikvision', 'Dahua', 'Axis', 'Bosch', 'Sony', 'Panasonic']
-  };
-
   // Now check for seller access
   if (!user || user.role !== 'seller') {
     return (
@@ -147,34 +90,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   useEffect(() => {
     loadData();
   }, []);
-
-  // Update product types when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      const types = productTypeData[selectedCategory] || [];
-      setProductTypes(types);
-      setSelectedProductType('');
-      setSelectedBrand('');
-      setBrands([]);
-    } else {
-      setProductTypes([]);
-      setSelectedProductType('');
-      setSelectedBrand('');
-      setBrands([]);
-    }
-  }, [selectedCategory, productTypeData]);
-
-  // Update brands when product type changes
-  useEffect(() => {
-    if (selectedProductType) {
-      const brandList = brandData[selectedProductType] || [];
-      setBrands(brandList);
-      setSelectedBrand('');
-    } else {
-      setBrands([]);
-      setSelectedBrand('');
-    }
-  }, [selectedProductType, brandData]);
 
   const loadData = async () => {
     try {
@@ -220,7 +135,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const handleProductAdd = async (newProduct: Product) => {
+  const handleProductAdd = async (_newProduct: Product) => {
     try {
       // For sellers, we'll show a notification that they need admin access
       showNotification('Product addition requires admin access. Please contact administrator.');
@@ -233,7 +148,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const handleProductDelete = async (productId: string) => {
+  const handleProductDelete = async (_productId: string) => {
     showNotification('Product deletion requires admin access. Please contact administrator.');
   };
 
@@ -316,7 +231,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, updatedItems?: any[], customerDetails?: { mobile: string; email: string; address: string }) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }, updatedItems?: any[]) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
@@ -390,11 +305,11 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const completePurchase = (customDateTime?: string) => {
+  const completePurchase = (_customDateTime?: string) => {
     showNotification('Purchase completion requires admin access. Please contact administrator.');
   };
 
-  const handleReturnProcess = (productId: string, quantity: number, reason: string) => {
+  const handleReturnProcess = (_productId: string, _quantity: number, _reason: string) => {
     showNotification('Return processing requires admin access. Please contact administrator.');
   };
 
@@ -445,13 +360,21 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   };
 
   const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (selectedCategory === '' || product.category === selectedCategory) &&
-    (selectedProductType === '' || product.name.toLowerCase().includes(selectedProductType.toLowerCase())) &&
-    (selectedBrand === '' || (product.brand && product.brand.toLowerCase().includes(selectedBrand.toLowerCase())))
+    (!selectedCategory || product.category === selectedCategory) &&
+    (!selectedSubcategory || product.subcategory === selectedSubcategory) &&
+    (!selectedBrand || product.brand === selectedBrand) &&
+    (!selectedModel || product.model === selectedModel) &&
+    (searchTerm.trim() === '' || 
+     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     product.id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   ).sort((a, b) => {
     let aValue = a[sortBy as keyof Product];
     let bValue = b[sortBy as keyof Product];
+    
+    // Handle undefined values
+    if (aValue === undefined) aValue = '';
+    if (bValue === undefined) bValue = '';
     
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
@@ -463,16 +386,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   });
 
-  const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0);
-  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.totalCost, 0);
-  const totalReturns = returns.reduce((sum, returnRecord) => sum + returnRecord.totalRefund, 0);
-  const netProfit = totalRevenue - totalPurchases - totalReturns;
   const lowStockProducts = products.filter(p => p.stock <= 10);
-
-  const handleSeeMore = (product: Product) => {
-    setSelectedProduct(product);
-    setShowProductDetailModal(true);
-  };
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -639,65 +553,19 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                  />
-                </div>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <select
-                  value={selectedProductType}
-                  onChange={(e) => setSelectedProductType(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                >
-                  <option value="">All Product Types</option>
-                  {productTypes.map((type, index) => (
-                    <option key={index} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                >
-                  <option value="">All Brands</option>
-                  {brands.map((brand, index) => (
-                    <option key={index} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <ProductFilterBar
+              products={products}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              setSelectedSubcategory={setSelectedSubcategory}
+              selectedBrand={selectedBrand}
+              setSelectedBrand={setSelectedBrand}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+            />
 
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -830,7 +698,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         )}
 
         {activeTab === 'sold-products' && (
-          <SoldProducts products={products} />
+          <SoldProducts sales={sales} />
         )}
 
         {activeTab === 'purchases' && (
@@ -936,14 +804,14 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
             {returns.map((returnRecord, index) => (
               <div key={index} className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-4 mb-4 shadow-lg shadow-cyan-500/10">
-                <h3 className="text-lg font-bold text-white mb-2">Return #{returnRecord.id.substring(0, 8)}</h3>
+                <h3 className="text-lg font-bold text-white mb-2">Return #{returnRecord.productID.substring(0, 8)}</h3>
                 <p className="text-slate-400 text-sm mb-2">Date: {new Date(returnRecord.timestamp).toLocaleDateString()}</p>
-                <p className="text-slate-400 text-sm mb-2">Customer: {returnRecord.customerName || 'N/A'}</p>
-                <p className="text-slate-400 text-sm mb-2">Reason: {returnRecord.reason}</p>
+                <p className="text-slate-400 text-sm mb-2">Admin: {returnRecord.adminId || 'N/A'}</p>
+                <p className="text-slate-400 text-sm mb-2">Reason: {returnRecord.reason || 'N/A'}</p>
                 <p className="text-slate-400 text-sm mb-2">Total Refund: ৳{returnRecord.totalRefund.toLocaleString()}</p>
                 <div className="flex items-center space-x-2 mt-4">
                   <button
-                    onClick={() => handleReturnProcess(returnRecord.productId, returnRecord.quantity, returnRecord.reason)}
+                    onClick={() => handleReturnProcess(returnRecord.productID, returnRecord.quantityReturned, returnRecord.reason || '')}
                     className="flex items-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
                   >
                     <AlertTriangle className="w-4 h-4" />
@@ -956,7 +824,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         )}
 
         {activeTab === 'warranty' && (
-          <WarrantyManagement products={products} />
+          <WarrantyManagement user={user} />
         )}
 
         {activeTab === 'categories' && (
@@ -1037,7 +905,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             isOpen={showProductEditModal}
             onClose={() => setShowProductEditModal(false)}
             product={selectedProduct}
-            isEditMode={isEditMode}
             onSave={handleProductUpdate}
             onAdd={handleProductAdd}
             onDelete={handleProductDelete}
@@ -1050,7 +917,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             isOpen={showProductDetailModal}
             onClose={() => setShowProductDetailModal(false)}
             product={selectedProduct}
-            onEdit={handleProductEdit}
             onUpdate={handleProductUpdate}
           />
         )}

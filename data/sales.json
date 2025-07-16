@@ -33,5 +33,75 @@
       "email": "santo@gmail",
       "address": "dfhgfd"
     }
+  },
+  {
+    "saleId": "s-1752647991269",
+    "productId": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "customerId": "admin-1752640309387",
+    "customerEmail": "a@gmail.com",
+    "quantity": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "currency": "BDT",
+    "dateOfSale": "2025-07-16",
+    "warrantyEndDate": "2026-07-16",
+    "timestamp": "2025-07-16T06:39:51.269Z",
+    "customerMobile": "01944326353",
+    "customerAddress": ""
+  },
+  {
+    "productID": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "quantitySold": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "timestamp": "2025-07-16T06:39:51.271Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "commonId": "DSF",
+    "uniqueId": "DSF-1752645480046-954",
+    "customer": {
+      "mobile": "01944326353",
+      "email": "",
+      "address": ""
+    }
+  },
+  {
+    "saleId": "s-1752648032307",
+    "productId": "IT2025-1752642774488",
+    "productName": "zZVZ",
+    "customerId": "admin-1752640309387",
+    "customerEmail": "a@gmail.com",
+    "quantity": 1,
+    "pricePerUnit": 10,
+    "totalPrice": 10,
+    "unit": "Piece",
+    "currency": "BDT",
+    "dateOfSale": "2025-07-16",
+    "warrantyEndDate": "2026-07-16",
+    "timestamp": "2025-07-16T06:40:32.307Z",
+    "customerMobile": "109343434",
+    "customerAddress": ""
+  },
+  {
+    "productID": "IT2025-1752642774488",
+    "productName": "zZVZ",
+    "quantitySold": 1,
+    "pricePerUnit": 10,
+    "totalPrice": 10,
+    "unit": "Piece",
+    "timestamp": "2025-07-16T06:40:32.311Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "commonId": "DSA",
+    "uniqueId": "DSA-1752642747292-923",
+    "customer": {
+      "mobile": "109343434",
+      "email": "",
+      "address": ""
+    }
   }
 ]
