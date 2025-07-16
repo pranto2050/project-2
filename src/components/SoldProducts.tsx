@@ -405,7 +405,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">Sold Products</h2>
-              <p className="text-slate-400">View all sold products with detailed customer information</p>
+              <p className="text-slate-400">View all sold products with detailed customer information - Updated v2.0</p>
             </div>
           </div>
           
@@ -543,6 +543,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
+              // Filter Section
                 onClick={() => setShowDateFilter(!showDateFilter)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   showDateFilter 
@@ -611,7 +612,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
         </div>
       </div>
 
-      {/* Sales Table */}
+      {/* Sales Table - Customer Info Table v2.0 */}
       <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl shadow-lg shadow-cyan-500/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">

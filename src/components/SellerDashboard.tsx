@@ -17,8 +17,8 @@ import {
   X,
   ShoppingBag
 } from 'lucide-react';
-import { User as UserType, Product, SaleRecord, PurchaseRecord, ReturnRecord, Category, DailySales } from '../types';
-import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, addCategory, deleteCategory, saveCustomerData } from '../utils/storage';
+import { User as UserType, Product, SaleRecord, ReturnRecord, Category, DailySales } from '../types';
+import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, deleteCategory, saveCustomerData } from '../utils/storage';
 import SalesModal from './SalesModal';
 import ReceiptModal from './ReceiptModal';
 import ProductEditModal from './ProductEditModal';
@@ -43,7 +43,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -62,13 +61,10 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [showPurchaseQuantityModal, setShowPurchaseQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [salesItems, setSalesItems] = useState<any[]>([]);
   const [purchaseItems, setPurchaseItems] = useState<any[]>([]);
   const [notification, setNotification] = useState<string>('');
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [todaysSalesData, setTodaysSalesData] = useState<DailySales>({
     date: new Date().toISOString().split('T')[0],
     sales: [],
@@ -93,7 +89,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
   const loadData = async () => {
     try {
-      const [productsData, categoriesData, salesData, purchasesData, returnsData, todaysSales] = await Promise.all([
+      const [productsData, categoriesData, salesData, , returnsData, todaysSales] = await Promise.all([
         getProducts(),
         getCategories(),
         getSalesLogs(),
@@ -105,7 +101,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       setProducts(productsData);
       setCategories(categoriesData);
       setSales(salesData);
-      setPurchases(purchasesData);
       setReturns(returnsData);
       setTodaysSalesData(todaysSales);
     } catch (error) {
@@ -135,26 +130,12 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const handleProductAdd = async (_newProduct: Product) => {
-    try {
-      // For sellers, we'll show a notification that they need admin access
-      showNotification('Product addition requires admin access. Please contact administrator.');
-      setShowProductEditModal(false);
-      setIsEditMode(false);
-      setSelectedProduct(null);
-    } catch (error) {
-      console.error('Error adding product:', error);
-      showNotification('Failed to add product');
-    }
-  };
-
   const handleProductDelete = async (_productId: string) => {
     showNotification('Product deletion requires admin access. Please contact administrator.');
   };
 
   const handleProductEdit = (product: Product) => {
     setSelectedProduct(product);
-    setIsEditMode(true);
     setShowProductEditModal(true);
   };
 
@@ -321,35 +302,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
   const handleReturnProcess = (_productId: string, _quantity: number, _reason: string) => {
     showNotification('Return processing requires admin access. Please contact administrator.');
-  };
-
-  const handleCategoryAdd = async () => {
-    if (!newCategoryName.trim()) {
-      showNotification('Please enter a category name');
-      return;
-    }
-
-    try {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name: newCategoryName.trim(),
-        description: newCategoryDescription.trim(),
-        createdDate: new Date().toISOString().split('T')[0]
-      };
-
-      const success = await addCategory(newCategory);
-      if (success) {
-        await loadData();
-        setNewCategoryName('');
-        setNewCategoryDescription('');
-        showNotification('Category added successfully');
-      } else {
-        showNotification('Category already exists');
-      }
-    } catch (error) {
-      console.error('Error adding category:', error);
-      showNotification('Failed to add category');
-    }
   };
 
   const handleCategoryDelete = async (categoryId: string) => {
@@ -916,8 +868,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             onClose={() => setShowProductEditModal(false)}
             product={selectedProduct}
             onSave={handleProductUpdate}
-            onAdd={handleProductAdd}
-            onDelete={handleProductDelete}
           />
         )}
 
@@ -927,7 +877,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             isOpen={showProductDetailModal}
             onClose={() => setShowProductDetailModal(false)}
             product={selectedProduct}
-            onUpdate={handleProductUpdate}
           />
         )}
 
@@ -967,7 +916,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
           <ReturnModal
             isOpen={showReturnModal}
             onClose={() => setShowReturnModal(false)}
-            returns={returns}
             onProcessReturn={handleReturnProcess}
           />
         )}

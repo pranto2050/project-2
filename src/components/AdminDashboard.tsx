@@ -289,7 +289,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { name: string; mobile: string; email: string; address: string }) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
@@ -355,6 +355,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           uniqueId: item.product.uniqueId,
           // Add customer details if provided
           customer: customerDetails ? {
+            name: customerDetails.name,
             mobile: customerDetails.mobile,
             email: customerDetails.email,
             address: customerDetails.address
