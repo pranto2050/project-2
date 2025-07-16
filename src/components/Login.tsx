@@ -183,16 +183,6 @@ const Login: React.FC<LoginProps> = ({ onClose, onLogin }) => {
               }
             </button>
           </div>
-
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <p className="text-xs text-slate-400 text-center">Demo Credentials:</p>
-            <div className="text-xs text-slate-300 text-center mt-1">
-              <p>Admin: admin@friendsitzone.com / @Pranto2050</p>
-              <p>Seller: seller@friendsitzone.com / seller123</p>
-              <p>Seller: pranto@friendsitzone.com / pranto123</p>
-              <p>Customer: customer@example.com / customer123</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
