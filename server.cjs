@@ -20,6 +20,7 @@ fs.ensureDirSync(DATA_DIR);
 const FILES = {
   products: path.join(DATA_DIR, 'products.json'),
   users: path.join(DATA_DIR, 'users.json'),
+  customers: path.join(DATA_DIR, 'customers.json'),
   administrators: path.join(DATA_DIR, 'administrators.json'),
   categories: path.join(DATA_DIR, 'categories.json'),
   brands: path.join(DATA_DIR, 'brands.json'),
@@ -383,13 +384,18 @@ app.post('/api/sales', async (req, res) => {
       userId: sale.userId,
       userEmail: sale.userEmail,
       saleDate: new Date(sale.timestamp).toISOString().split('T')[0],
-      soldBy: sale.userId
+      soldBy: sale.userId,
+      // Customer information (if provided)
+      customerName: sale.customer?.name || '',
+      customerMobile: sale.customer?.mobile || '',
+      customerEmail: sale.customer?.email || '',
+      customerAddress: sale.customer?.address || ''
     };
     
     soldProducts.push(soldProduct);
     await writeJsonFile(FILES.soldproducts, soldProducts);
     
-    res.json({ success: true, message: 'Sale recorded and added to sold products' });
+    res.json({ success: true, message: 'Sale recorded and added to sold products with customer info' });
   } catch (error) {
     console.error('Error saving sale:', error);
     res.status(500).json({ success: false, message: 'Failed to save sale' });
@@ -494,7 +500,36 @@ app.post('/api/sales-with-warranty', async (req, res) => {
     allSales.push(saleRecord);
     await writeJsonFile(FILES.sales, allSales);
     
-    res.json({ success: true, saleId, message: 'Sale with warranty recorded successfully' });
+    // Also add to sold products with customer information
+    let soldProducts = [];
+    if (await fs.pathExists(FILES.soldproducts)) {
+      soldProducts = await readJsonFile(FILES.soldproducts);
+    }
+    
+    const soldProduct = {
+      id: `sold-${Date.now()}`,
+      productID: saleData.productId,
+      productName: saleData.productName,
+      quantitySold: saleData.quantity,
+      pricePerUnit: saleData.pricePerUnit,
+      totalPrice: saleData.totalPrice,
+      unit: saleData.unit,
+      timestamp: saleRecord.timestamp,
+      userId: saleData.sellerId || saleData.customerId,
+      userEmail: saleData.customerEmail,
+      saleDate: saleData.dateOfSale,
+      soldBy: saleData.sellerId || saleData.customerId,
+      // Customer information
+      customerName: saleData.customer?.name || '',
+      customerMobile: saleData.customer?.mobile || '',
+      customerEmail: saleData.customer?.email || '',
+      customerAddress: saleData.customer?.address || ''
+    };
+    
+    soldProducts.push(soldProduct);
+    await writeJsonFile(FILES.soldproducts, soldProducts);
+    
+    res.json({ success: true, saleId, message: 'Sale with warranty and customer info recorded successfully' });
   } catch (error) {
     console.error('Error saving sale with warranty:', error);
     res.status(500).json({ success: false, message: 'Failed to save sale with warranty' });
@@ -680,6 +715,74 @@ app.delete('/api/brands/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting brand:', error);
     res.status(500).json({ success: false, message: 'Failed to delete brand' });
+  }
+});
+
+// Customers API
+app.get('/api/customers', async (req, res) => {
+  const customers = await readJsonFile(FILES.customers);
+  res.json({ success: true, data: customers });
+});
+
+app.post('/api/customers', async (req, res) => {
+  const customers = await readJsonFile(FILES.customers);
+  const { mobile, name } = req.body;
+  
+  // Check if customer with this mobile number already exists
+  if (customers.some(c => c.mobile === mobile)) {
+    return res.status(400).json({ success: false, message: 'Customer with this mobile number already exists.' });
+  }
+  
+  const newCustomer = { 
+    ...req.body, 
+    id: req.body.id || `cust-${Date.now()}`,
+    registrationDate: req.body.registrationDate || new Date().toISOString(),
+    totalPurchases: req.body.totalPurchases || 0,
+    lastPurchaseDate: req.body.lastPurchaseDate || null
+  };
+  
+  customers.push(newCustomer);
+  
+  if (await writeJsonFile(FILES.customers, customers)) {
+    res.json({ success: true, customer: newCustomer, message: '✅ Customer added successfully' });
+  } else {
+    res.status(500).json({ success: false, message: 'Failed to save customer' });
+  }
+});
+
+// Update customer details
+app.put('/api/customers/:id', async (req, res) => {
+  const customers = await readJsonFile(FILES.customers);
+  const index = customers.findIndex(c => c.id === req.params.id);
+  
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Customer not found' });
+  }
+  
+  // Check for duplicate mobile (except for the customer being updated)
+  const { mobile } = req.body;
+  if (mobile && customers.some((c, i) => i !== index && c.mobile === mobile)) {
+    return res.status(400).json({ success: false, message: 'Customer with this mobile number already exists.' });
+  }
+  
+  // Update customer
+  customers[index] = { ...customers[index], ...req.body };
+  
+  if (await writeJsonFile(FILES.customers, customers)) {
+    res.json({ success: true, customer: customers[index], message: '🔄 Customer updated' });
+  } else {
+    res.status(500).json({ success: false, message: 'Failed to update customer' });
+  }
+});
+
+app.delete('/api/customers/:id', async (req, res) => {
+  const customers = await readJsonFile(FILES.customers);
+  const filteredCustomers = customers.filter(c => c.id !== req.params.id);
+  
+  if (await writeJsonFile(FILES.customers, filteredCustomers)) {
+    res.json({ success: true, message: '🗑️ Customer deleted' });
+  } else {
+    res.status(500).json({ success: false, message: 'Failed to delete customer' });
   }
 });
 

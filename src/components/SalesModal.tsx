@@ -28,6 +28,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
   const [useCustomWarrantyEnd, setUseCustomWarrantyEnd] = useState(false);
 
   // Customer information fields
+  const [customerName, setCustomerName] = useState('');
   const [customerMobile, setCustomerMobile] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -75,8 +76,9 @@ const SalesModal: React.FC<SalesModalProps> = ({
       warrantyEndDate
     };
 
-    // Prepare customer details if mobile number is provided (mobile is required)
-    const customerDetails: CustomerDetails | undefined = customerMobile.trim() ? {
+    // Prepare customer details if both name and mobile number are provided (both are required)
+    const customerDetails: CustomerDetails | undefined = (customerName.trim() && customerMobile.trim()) ? {
+      name: customerName.trim(),
       mobile: customerMobile.trim(),
       email: customerEmail.trim(),
       address: customerAddress.trim()
@@ -183,11 +185,25 @@ const SalesModal: React.FC<SalesModalProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Customer Information</h3>
-                  <p className="text-slate-400 text-sm">Add customer details (mobile number is required)</p>
+                  <p className="text-slate-400 text-sm">Add customer details (name and mobile number are required)</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Customer Name (Required) */}
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">
+                    Customer Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Enter customer's full name"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
+                  />
+                </div>
+
                 {/* Mobile Number (Required) */}
                 <div>
                   <label className="block text-slate-400 text-sm mb-2">
@@ -215,7 +231,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
                 </div>
 
                 {/* Customer Address */}
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-slate-400 text-sm mb-2">Address</label>
                   <textarea
                     value={customerAddress}

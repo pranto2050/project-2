@@ -18,7 +18,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { User as UserType, Product, SaleRecord, PurchaseRecord, ReturnRecord, Category, DailySales } from '../types';
-import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, addCategory, deleteCategory } from '../utils/storage';
+import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories, addCategory, deleteCategory, saveCustomerData } from '../utils/storage';
 import SalesModal from './SalesModal';
 import ReceiptModal from './ReceiptModal';
 import ProductEditModal from './ProductEditModal';
@@ -231,7 +231,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }, updatedItems?: any[]) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { name: string; mobile: string; email: string; address: string }, updatedItems?: any[]) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
@@ -240,6 +240,15 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     const itemsToProcess = updatedItems || salesItems;
 
     try {
+      // Save customer data if provided
+      let savedCustomer = null;
+      if (customerDetails && customerDetails.name && customerDetails.mobile) {
+        savedCustomer = await saveCustomerData(customerDetails);
+        if (savedCustomer) {
+          showNotification(`Customer data saved: ${savedCustomer.name}`);
+        }
+      }
+
       for (const item of itemsToProcess) {
         // Update stock
         await updateStock(item.product.id, item.product.stock - item.quantity);
@@ -269,6 +278,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
           sellerName: user.name,
           sellerRole: user.role,
           customer: customerDetails ? {
+            name: customerDetails.name,
             mobile: customerDetails.mobile,
             email: customerDetails.email,
             address: customerDetails.address

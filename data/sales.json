@@ -103,5 +103,40 @@
       "email": "",
       "address": ""
     }
+  },
+  {
+    "saleId": "s-1752648600946",
+    "productId": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "customerId": "admin-1752640309387",
+    "customerEmail": "a@gmail.com",
+    "quantity": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "currency": "BDT",
+    "dateOfSale": "2025-07-16",
+    "warrantyEndDate": "2026-07-16",
+    "timestamp": "2025-07-16T06:50:00.946Z",
+    "customerMobile": "0198898778",
+    "customerAddress": "ghfhgf"
+  },
+  {
+    "productID": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "quantitySold": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "timestamp": "2025-07-16T06:50:00.949Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "commonId": "DSF",
+    "uniqueId": "DSF-1752645480046-954",
+    "customer": {
+      "mobile": "0198898778",
+      "email": "jhjhg@gmail.com",
+      "address": "ghfhgf"
+    }
   }
 ]

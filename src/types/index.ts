@@ -52,6 +52,7 @@ export interface SaleItem {
 }
 
 export interface CustomerDetails {
+  name: string;
   mobile: string;
   email: string;
   address: string;
@@ -226,4 +227,16 @@ export interface StockItem {
   image: string;
   description: string;
   specifications?: { [key: string]: string };
+}
+
+// Customer interface for customer database
+export interface Customer {
+  id: string;
+  name: string;
+  mobile: string;
+  email: string;
+  address: string;
+  registrationDate: string;
+  totalPurchases: number;
+  lastPurchaseDate: string | null;
 }

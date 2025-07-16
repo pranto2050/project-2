@@ -543,6 +543,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
+              // Filter Section
                 onClick={() => setShowDateFilter(!showDateFilter)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   showDateFilter 

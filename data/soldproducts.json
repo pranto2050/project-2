@@ -11,7 +11,11 @@
     "userId": "admin-001",
     "userEmail": "admin@friendsitzone.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-001"
+    "soldBy": "admin-001",
+    "customerName": "John Doe",
+    "customerMobile": "+8801712345678",
+    "customerEmail": "customer1@example.com",
+    "customerAddress": "123 Main Street, Dhaka, Bangladesh"
   },
   {
     "id": "sold-1752638052569",
@@ -25,7 +29,11 @@
     "userId": "admin-001",
     "userEmail": "admin@friendsitzone.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-001"
+    "soldBy": "admin-001",
+    "customerName": "Jane Smith",
+    "customerMobile": "+8801987654321",
+    "customerEmail": "customer2@example.com",
+    "customerAddress": "456 Park Avenue, Chittagong, Bangladesh"
   },
   {
     "id": "sold-1752640919910",
@@ -39,7 +47,11 @@
     "userId": "admin-001",
     "userEmail": "admin@friendsitzone.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-001"
+    "soldBy": "admin-001",
+    "customerName": "Ahmed Rahman",
+    "customerMobile": "+8801555123456",
+    "customerEmail": "ahmed@example.com",
+    "customerAddress": "789 University Road, Sylhet, Bangladesh"
   },
   {
     "id": "sold-1752646496729",
@@ -53,7 +65,11 @@
     "userId": "admin-1752640309387",
     "userEmail": "a@gmail.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-1752640309387"
+    "soldBy": "admin-1752640309387",
+    "customerName": "Fatima Khan",
+    "customerMobile": "+8801666789123",
+    "customerEmail": "fatima@example.com",
+    "customerAddress": "321 Commercial Street, Rajshahi, Bangladesh"
   },
   {
     "id": "sold-1752647991275",
@@ -67,7 +83,11 @@
     "userId": "admin-1752640309387",
     "userEmail": "a@gmail.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-1752640309387"
+    "soldBy": "admin-1752640309387",
+    "customerName": "Rafiq Hassan",
+    "customerMobile": "+8801777456789",
+    "customerEmail": "rafiq@example.com",
+    "customerAddress": "654 Green Road, Khulna, Bangladesh"
   },
   {
     "id": "sold-1752648032314",
@@ -81,6 +101,28 @@
     "userId": "admin-1752640309387",
     "userEmail": "a@gmail.com",
     "saleDate": "2025-07-16",
-    "soldBy": "admin-1752640309387"
+    "soldBy": "admin-1752640309387",
+    "customerName": "Salma Begum",
+    "customerMobile": "+8801888567890",
+    "customerEmail": "salma@example.com",
+    "customerAddress": "987 Lake View, Barisal, Bangladesh"
+  },
+  {
+    "id": "sold-1752648600952",
+    "productID": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "quantitySold": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "timestamp": "2025-07-16T06:50:00.949Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-1752640309387",
+    "customerName": "Karim Uddin",
+    "customerMobile": "+8801999678901",
+    "customerEmail": "karim@example.com",
+    "customerAddress": "147 New Market, Rangpur, Bangladesh"
   }
 ]
