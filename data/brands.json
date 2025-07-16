@@ -6,5 +6,69 @@
     "logoUrl": "",
     "logoFile": "",
     "createdDate": "2025-07-14"
+  },
+  {
+    "id": "brand-tp-link",
+    "name": "TP-Link",
+    "description": "Leading provider of networking equipment and WiFi products",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-netgear",
+    "name": "Netgear",
+    "description": "Network hardware company providing networking solutions",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-asus",
+    "name": "ASUS",
+    "description": "Computer hardware and electronics company",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-d-link",
+    "name": "D-Link",
+    "description": "Networking equipment manufacturer",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-linksys",
+    "name": "Linksys",
+    "description": "Consumer networking hardware brand",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-cisco",
+    "name": "Cisco",
+    "description": "Multinational technology company specializing in networking",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-ubiquiti",
+    "name": "Ubiquiti",
+    "description": "Enterprise networking and wireless communication products",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
+  },
+  {
+    "id": "brand-mikrotik",
+    "name": "MikroTik",
+    "description": "Network equipment manufacturer and software company",
+    "logoUrl": "",
+    "logoFile": "",
+    "createdDate": "2025-01-14"
   }
 ]

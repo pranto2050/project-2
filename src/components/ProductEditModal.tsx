@@ -60,7 +60,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [routerBrand, setRouterBrand] = useState('');
 
   const networkItems = ['Router', 'Switch', 'ONU'];
-  const networkBrands = ['TP-Link', 'Netgear', 'ASUS', 'D-Link', 'Linksys', 'Cisco', 'Huawei', 'MikroTik', 'Ubiquiti', 'Tenda'];
+
   
   // Load categories when modal opens
   useEffect(() => {
@@ -418,8 +418,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                         required
                       >
                         <option value="" className="bg-slate-800">Select Brand</option>
-                        {networkBrands.map(brand => (
-                          <option key={brand} value={brand} className="bg-slate-800">{brand}</option>
+                        {getFilteredBrands().map(brand => (
+                          <option key={brand.id} value={brand.name} className="bg-slate-800">{brand.name}</option>
                         ))}
                       </select>
                     </div>
