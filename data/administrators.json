@@ -16,5 +16,14 @@
     "points": 0,
     "purchaseHistory": [],
     "id": "admin-1752645271660"
+  },
+  {
+    "name": "Sanzit",
+    "email": "sanzit@gmail.com",
+    "password": "s",
+    "role": "seller",
+    "points": 0,
+    "purchaseHistory": [],
+    "id": "admin-1752673287648"
   }
 ]

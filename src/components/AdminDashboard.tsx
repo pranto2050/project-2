@@ -508,7 +508,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       )
     )
     .sort((a, b) => {
-      if (!sortBy) return 0;
+      // Default order: Name A-Z when no sort is specified
+      if (!sortBy || sortBy === '') {
+        return a.name.localeCompare(b.name);
+      }
       
       switch (sortBy) {
         case 'name-asc':
@@ -528,7 +531,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         case 'oldest':
           return new Date(a.addedDate || '').getTime() - new Date(b.addedDate || '').getTime();
         default:
-          return 0;
+          return a.name.localeCompare(b.name);
       }
     });
 

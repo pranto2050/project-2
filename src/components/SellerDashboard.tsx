@@ -16,7 +16,10 @@ import {
   Trash2,
   AlertTriangle,
   X,
-  ShoppingBag
+  ShoppingBag,
+  SortAsc,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { User as UserType, Product, SaleRecord, ReturnRecord, Category, DailySales, CustomerDetails } from '../types';
 import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories } from '../utils/storage';
@@ -56,6 +59,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   // Enhanced 3-dropdown filter system
   const [selectedProductType, setSelectedProductType] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
+  const [sortBy, setSortBy] = useState('');
   const [productTypes, setProductTypes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   
@@ -81,46 +85,9 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [completedSaleItems, setCompletedSaleItems] = useState<any[]>([]);
   const [completedCustomerDetails, setCompletedCustomerDetails] = useState<any>(null);
 
-  // Product type and brand data structure
-  const productTypeData: { [category: string]: string[] } = {
-    'Network': ['Router', 'Switch', 'ONU', 'Access Point', 'Modem', 'Network Card'],
-    'Storage': ['SSD', 'HDD', 'USB Drive', 'Memory Card', 'External Drive', 'NAS'],
-    'Computing': ['CPU', 'GPU', 'RAM', 'Motherboard', 'Power Supply', 'Cooling'],
-    'Peripheral': ['Mouse', 'Keyboard', 'Monitor', 'Speaker', 'Webcam', 'Printer'],
-    'Camera': ['DSLR', 'Mirrorless', 'Action Camera', 'Webcam', 'Security Camera'],
-    'Router': ['Wireless Router', 'Gaming Router', 'Mesh Router', 'Travel Router']
-  };
-
-  const brandData: { [productType: string]: string[] } = {
-    'Router': ['TP-Link', 'MikroTik', 'Netgear', 'D-Link', 'Cisco', 'Asus', 'Huawei', 'Linksys'],
-    'Switch': ['Cisco', 'HP', 'Dell', 'Netgear', 'TP-Link', 'MikroTik', 'Juniper'],
-    'ONU': ['Huawei', 'ZTE', 'Alcatel', 'Nokia', 'Ericsson', 'Cisco'],
-    'Access Point': ['Ubiquiti', 'Cisco', 'Aruba', 'Ruckus', 'TP-Link', 'Netgear'],
-    'Modem': ['Huawei', 'ZTE', 'Motorola', 'Netgear', 'TP-Link', 'D-Link'],
-    'Network Card': ['Intel', 'Realtek', 'Broadcom', 'Qualcomm', 'Marvell'],
-    'SSD': ['Samsung', 'WD', 'Crucial', 'Kingston', 'SanDisk', 'Intel', 'ADATA'],
-    'HDD': ['Seagate', 'WD', 'Toshiba', 'Hitachi', 'Samsung'],
-    'USB Drive': ['SanDisk', 'Kingston', 'Samsung', 'WD', 'PNY', 'ADATA'],
-    'Memory Card': ['SanDisk', 'Samsung', 'Kingston', 'Lexar', 'PNY', 'ADATA'],
-    'External Drive': ['WD', 'Seagate', 'Samsung', 'Toshiba', 'LaCie'],
-    'NAS': ['Synology', 'QNAP', 'WD', 'Seagate', 'Asustor', 'Terramaster'],
-    'CPU': ['Intel', 'AMD', 'ARM'],
-    'GPU': ['NVIDIA', 'AMD', 'Intel'],
-    'RAM': ['Corsair', 'G.Skill', 'Kingston', 'Crucial', 'ADATA', 'Team Group'],
-    'Motherboard': ['ASUS', 'MSI', 'Gigabyte', 'ASRock', 'Intel', 'Biostar'],
-    'Power Supply': ['Corsair', 'EVGA', 'Seasonic', 'Cooler Master', 'Thermaltake'],
-    'Cooling': ['Noctua', 'Corsair', 'Cooler Master', 'be quiet!', 'Arctic', 'NZXT'],
-    'Mouse': ['Logitech', 'Razer', 'SteelSeries', 'Corsair', 'Microsoft', 'HP'],
-    'Keyboard': ['Logitech', 'Razer', 'Corsair', 'SteelSeries', 'Cherry', 'Ducky'],
-    'Monitor': ['Samsung', 'LG', 'Dell', 'ASUS', 'Acer', 'BenQ', 'ViewSonic'],
-    'Speaker': ['Logitech', 'Creative', 'Bose', 'JBL', 'Harman Kardon', 'Klipsch'],
-    'Webcam': ['Logitech', 'Microsoft', 'Razer', 'Creative', 'HP', 'Dell'],
-    'Printer': ['HP', 'Canon', 'Epson', 'Brother', 'Samsung', 'Xerox'],
-    'DSLR': ['Canon', 'Nikon', 'Sony', 'Pentax', 'Fujifilm'],
-    'Mirrorless': ['Sony', 'Canon', 'Nikon', 'Fujifilm', 'Panasonic', 'Olympus'],
-    'Action Camera': ['GoPro', 'DJI', 'Sony', 'Garmin', 'Insta360'],
-    'Security Camera': ['Hikvision', 'Dahua', 'Axis', 'Bosch', 'Sony', 'Panasonic']
-  };
+  // Pagination state for products
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
 
   // Now check for seller access
   if (!user || user.role !== 'seller') {
@@ -137,8 +104,10 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
   // Update product types when category changes
   useEffect(() => {
-    if (selectedCategory) {
-      const types = productTypeData[selectedCategory] || [];
+    if (selectedCategory && products.length > 0) {
+      // Extract unique product types from products in the selected category
+      const categoryProducts = products.filter(p => p.category === selectedCategory);
+      const types = [...new Set(categoryProducts.map(p => p.networkItem).filter(Boolean))] as string[];
       setProductTypes(types);
       setSelectedProductType('');
       setSelectedBrand('');
@@ -149,19 +118,24 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       setSelectedBrand('');
       setBrands([]);
     }
-  }, [selectedCategory, productTypeData]);
+  }, [selectedCategory, products]);
 
   // Update brands when product type changes
   useEffect(() => {
-    if (selectedProductType) {
-      const brandList = brandData[selectedProductType] || [];
+    if (selectedProductType && products.length > 0) {
+      // Extract unique brands from products matching the selected product type
+      const typeProducts = products.filter(p => 
+        p.networkItem === selectedProductType || 
+        p.name.toLowerCase().includes(selectedProductType.toLowerCase())
+      );
+      const brandList = [...new Set(typeProducts.map(p => p.brand).filter(Boolean))] as string[];
       setBrands(brandList);
       setSelectedBrand('');
     } else {
       setBrands([]);
       setSelectedBrand('');
     }
-  }, [selectedProductType, brandData]);
+  }, [selectedProductType, products]);
 
   const loadData = async () => {
     try {
@@ -363,14 +337,66 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     showNotification('Purchase completion requires admin access. Please contact administrator.');
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (selectedCategory === '' || product.category === selectedCategory) &&
-    (selectedProductType === '' || 
-     product.name.toLowerCase().includes(selectedProductType.toLowerCase()) ||
-     (product.networkItem && product.networkItem.toLowerCase().includes(selectedProductType.toLowerCase()))) &&
-    (selectedBrand === '' || (product.brand && product.brand.toLowerCase().includes(selectedBrand.toLowerCase())))
-  );
+  const filteredProducts = products
+    .filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (selectedCategory === '' || product.category === selectedCategory) &&
+      (selectedProductType === '' || 
+       product.name.toLowerCase().includes(selectedProductType.toLowerCase()) ||
+       (product.networkItem && product.networkItem.toLowerCase().includes(selectedProductType.toLowerCase()))) &&
+      (selectedBrand === '' || (product.brand && product.brand.toLowerCase().includes(selectedBrand.toLowerCase())))
+    )
+    .sort((a, b) => {
+      // Default order: Name A-Z when no sort is specified
+      if (!sortBy || sortBy === '') {
+        return a.name.localeCompare(b.name);
+      }
+      
+      switch (sortBy) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'price-asc':
+          return a.pricePerUnit - b.pricePerUnit;
+        case 'price-desc':
+          return b.pricePerUnit - a.pricePerUnit;
+        case 'stock-asc':
+          return a.stock - b.stock;
+        case 'stock-desc':
+          return b.stock - a.stock;
+        case 'newest':
+          return new Date(b.addedDate || '').getTime() - new Date(a.addedDate || '').getTime();
+        case 'oldest':
+          return new Date(a.addedDate || '').getTime() - new Date(b.addedDate || '').getTime();
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+  // Pagination calculations
+  const totalProducts = filteredProducts.length;
+  const totalPages = Math.ceil(totalProducts / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const lowStockProducts = products.filter(p => p.stock <= 10);
 
@@ -597,6 +623,40 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                   ))}
                 </select>
               </div>
+              <div className="relative">
+                <SortAsc className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-purple-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
+                >
+                  <option value="">Default Order</option>
+                  <option value="name-asc">Name A-Z</option>
+                  <option value="name-desc">Name Z-A</option>
+                  <option value="price-asc">Price Low to High</option>
+                  <option value="price-desc">Price High to Low</option>
+                  <option value="stock-asc">Stock Low to High</option>
+                  <option value="stock-desc">Stock High to Low</option>
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Pagination Notice */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2">
+                <Package className="w-5 h-5 text-blue-400" />
+                <div className="text-blue-200">
+                  <p className="font-medium">📄 Product Navigation</p>
+                  <p className="text-sm text-blue-300">
+                    By default, Page 1 shows 20 products. To see more, click <strong>Next</strong> or select pages <strong>2, 3, etc.</strong> to view the remaining products.
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1">
+                    Showing {startIndex + 1}-{Math.min(endIndex, totalProducts)} of {totalProducts} products
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -612,7 +672,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => (
+                  {paginatedProducts.map((product) => (
                     <tr key={product.id} className="border-b border-slate-700/30 hover:bg-white/5">
                       <td className="py-3 px-4 text-white">{product.name}</td>
                       <td className="py-3 px-4 text-slate-300">{product.category}</td>
@@ -638,6 +698,63 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center space-x-1 px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg border border-cyan-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg border transition-all duration-300 ${
+                        currentPage === page
+                          ? 'bg-cyan-500/30 text-cyan-400 border-cyan-500/50'
+                          : 'bg-white/10 text-slate-400 border-white/20 hover:bg-white/20 hover:text-white'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center space-x-1 px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg border border-cyan-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* No Results Message */}
+            {paginatedProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">No Products Found</h3>
+                <p className="text-slate-400">
+                  {searchTerm || selectedCategory || selectedProductType || selectedBrand
+                    ? 'No products match your current filters. Try adjusting your search criteria.'
+                    : 'No products available in the inventory.'
+                  }
+                </p>
+              </div>
+            )}
           </div>
         )}
 

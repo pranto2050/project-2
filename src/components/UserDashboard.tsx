@@ -295,12 +295,44 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     setShowDetailModal(true);
   };
 
-  const filteredProducts = products.filter(p =>
-    (!selectedCategory || p.category === selectedCategory) &&
-    (!selectedSubcategory || p.subcategory === selectedSubcategory || p.networkItem === selectedSubcategory) &&
-    (!selectedBrand || p.brand === selectedBrand) &&
-    (!selectedModel || p.model === selectedModel)
-  );
+  const filteredProducts = products
+    .filter(p =>
+      (!selectedCategory || p.category === selectedCategory) &&
+      (!selectedSubcategory || p.subcategory === selectedSubcategory || p.networkItem === selectedSubcategory) &&
+      (!selectedBrand || p.brand === selectedBrand) &&
+      (!selectedModel || p.model === selectedModel) &&
+      (searchQuery.trim() === '' || 
+       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       p.id.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    )
+    .sort((a, b) => {
+      // Default order: Name A-Z when no sort is specified
+      if (!sortBy || sortBy === '') {
+        return a.name.localeCompare(b.name);
+      }
+      
+      switch (sortBy) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'price-asc':
+          return a.pricePerUnit - b.pricePerUnit;
+        case 'price-desc':
+          return b.pricePerUnit - a.pricePerUnit;
+        case 'stock-asc':
+          return a.stock - b.stock;
+        case 'stock-desc':
+          return b.stock - a.stock;
+        case 'newest':
+          return new Date(b.addedDate || '').getTime() - new Date(a.addedDate || '').getTime();
+        case 'oldest':
+          return new Date(a.addedDate || '').getTime() - new Date(b.addedDate || '').getTime();
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 pt-20 pb-8">

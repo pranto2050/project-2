@@ -18,11 +18,10 @@ const PublicView: React.FC<PublicViewProps> = ({ currentSection }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
-  const [showAllProducts, setShowAllProducts] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 50;
+  const itemsPerPage = 20;
   const [filters, setFilters] = useState<ProductFilters>({
     category: '',
     priceRange: null,
@@ -151,10 +150,6 @@ const PublicView: React.FC<PublicViewProps> = ({ currentSection }) => {
   const handleSeeMore = (product: Product) => {
     setSelectedProduct(product);
     setShowDetailModal(true);
-  };
-
-  const handleLoadMore = () => {
-    setShowAllProducts(true);
   };
 
   const handlePageChange = (page: number) => {
@@ -443,22 +438,126 @@ const PublicView: React.FC<PublicViewProps> = ({ currentSection }) => {
             ))}
           </div>
           
-          {!showAllProducts && products.length > 50 && (
-            <div className="text-center mt-12">
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center mt-12 space-x-2">
+              {/* Previous Button */}
               <button
-                onClick={handleLoadMore}
-                className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 hover:from-cyan-400/30 hover:to-blue-500/30 text-cyan-400 rounded-xl border border-cyan-500/30 transition-all duration-300 hover:scale-[1.02] font-semibold shadow-lg shadow-cyan-500/10"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className={`flex items-center space-x-1 px-4 py-2 rounded-lg border transition-all duration-300 ${
+                  currentPage === 1
+                    ? 'bg-slate-800 text-slate-500 border-slate-600 cursor-not-allowed'
+                    : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border-cyan-500/30 hover:scale-[1.02]'
+                }`}
               >
-                <span>See More Products</span>
-                <ChevronDown className="w-5 h-5" />
+                <ChevronDown className="w-4 h-4 rotate-90" />
+                <span>Prev</span>
               </button>
-              <p className="text-slate-400 text-sm mt-2">
-                Showing {displayedProducts.length} of {products.length} products
-              </p>
+
+              {/* Page Numbers */}
+              <div className="flex space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-2 rounded-lg border font-medium transition-all duration-300 ${
+                        pageNum === currentPage
+                          ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 border-cyan-400 shadow-lg shadow-cyan-500/25'
+                          : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-cyan-400/50'
+                      }`}
+                    >
+                      {pageNum.toString().padStart(2, '0')}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`flex items-center space-x-1 px-4 py-2 rounded-lg border transition-all duration-300 ${
+                  currentPage === totalPages
+                    ? 'bg-slate-800 text-slate-500 border-slate-600 cursor-not-allowed'
+                    : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border-cyan-500/30 hover:scale-[1.02]'
+                }`}
+              >
+                <span>Next</span>
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
             </div>
           )}
+
+          {/* Products Info */}
+          <div className="text-center mt-8">
+            <p className="text-slate-400 text-sm">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, products.length)}-{Math.min(currentPage * itemsPerPage, products.length)} of {products.length} products
+            </p>
+          </div>
         </div>
-        
+
+        {/* Call to Action */}
+        <div className="bg-gradient-to-r from-cyan-400/20 to-blue-500/20 backdrop-blur-xl border border-cyan-400/30 rounded-xl p-12 text-center shadow-lg shadow-cyan-500/10">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Upgrade Your Tech?
+          </h2>
+          <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
+            Join our community and discover the latest in IT technology. Create an account to start shopping 
+            and earn loyalty points with every purchase from FRIENDS IT ZONE.
+          </p>
+          <div className="flex items-center justify-center space-x-2 text-cyan-400">
+            <ShoppingCart className="w-5 h-5" />
+            <span className="font-medium">Login required to purchase items</span>
+          </div>
+        </div>
+
+        {/* Shop Information Footer */}
+        <div className="bg-gradient-to-r from-slate-800/40 to-blue-800/40 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-8 mt-16 shadow-lg shadow-cyan-500/10">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-4">FRIENDS IT ZONE</h2>
+            <div className="w-16 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <h3 className="text-cyan-400 font-bold mb-2">Proprietors</h3>
+              <p className="text-white text-sm">KAJAL BISWAS</p>
+              <p className="text-white text-sm">ASHRAFUL ALAM TANIM</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <h3 className="text-cyan-400 font-bold mb-2">Location</h3>
+              <p className="text-white text-sm">HARINAKUNDA UPAZILA MORE</p>
+              <p className="text-white text-sm">MASTER MARKET 2</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <h3 className="text-cyan-400 font-bold mb-2">Contact</h3>
+              <p className="text-white text-sm">01718000117</p>
+              <p className="text-white text-sm">01947533013</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <h3 className="text-cyan-400 font-bold mb-2">Currency</h3>
+              <p className="text-white text-sm">All prices in</p>
+              <p className="text-cyan-400 font-bold">Bangladeshi Taka (৳)</p>
+            </div>
+          </div>
+        </div>
+
         <ProductDetailModal
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
@@ -547,6 +646,23 @@ const PublicView: React.FC<PublicViewProps> = ({ currentSection }) => {
           <h2 className="text-3xl font-bold text-white mb-8 text-center">
             Complete Electronics Catalog
           </h2>
+
+          {/* Product Navigation Notice */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2">
+              <Package className="w-5 h-5 text-blue-400" />
+              <div className="text-blue-200">
+                <p className="font-medium">📄 Product Navigation</p>
+                <p className="text-sm text-blue-300">
+                  By default, Page 1 shows 20 products. To see more, click <strong>Next</strong> or select pages <strong>2, 3, etc.</strong> to view the remaining products.
+                </p>
+                <p className="text-xs text-blue-400 mt-1">
+                  Showing {Math.min((currentPage - 1) * itemsPerPage + 1, products.length)}-{Math.min(currentPage * itemsPerPage, products.length)} of {products.length} products
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedProducts.map(product => (
               <ProductCard 
