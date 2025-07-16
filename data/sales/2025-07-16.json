@@ -28,5 +28,20 @@
     "dateOfSale": "2025-07-16",
     "warrantyEndDate": "2026-07-16",
     "timestamp": "2025-07-16T03:54:12.560Z"
+  },
+  {
+    "saleId": "s-1752640919899",
+    "productId": "IT2025-1752640406811",
+    "productName": "tplink",
+    "customerId": "admin-001",
+    "customerEmail": "admin@friendsitzone.com",
+    "quantity": 1,
+    "pricePerUnit": 35,
+    "totalPrice": 35,
+    "unit": "",
+    "currency": "BDT",
+    "dateOfSale": "2025-07-16",
+    "warrantyEndDate": "2026-07-16",
+    "timestamp": "2025-07-16T04:41:59.899Z"
   }
 ]

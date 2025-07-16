@@ -147,7 +147,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     setSalesItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async () => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, saleData?: any) => {
     if (!user || salesItems.length === 0) return;
     const receiptNumber = `RCP${Date.now()}`;
     setLastReceiptNumber(receiptNumber);

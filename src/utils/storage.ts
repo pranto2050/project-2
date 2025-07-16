@@ -360,3 +360,62 @@ export const deleteBrand = async (brandId: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Customer management functions
+export const getCustomers = async (): Promise<any[]> => {
+  try {
+    const response = await fetch('http://localhost:3001/api/customers');
+    const customers = await response.json();
+    return Array.isArray(customers) ? customers : [];
+  } catch (error) {
+    console.error('Failed to fetch customers:', error);
+    return [];
+  }
+};
+
+export const addCustomer = async (customer: any): Promise<any> => {
+  try {
+    const response = await fetch('http://localhost:3001/api/customers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customer)
+    });
+    const result = await response.json();
+    return result.success ? result.customer : null;
+  } catch (error) {
+    console.error('Failed to add customer:', error);
+    return null;
+  }
+};
+
+export const updateCustomer = async (customerId: string, customer: any): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/customers/${customerId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customer)
+    });
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('Failed to update customer:', error);
+    return false;
+  }
+};
+
+export const deleteCustomer = async (customerId: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/customers/${customerId}`, {
+      method: 'DELETE'
+    });
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('Failed to delete customer:', error);
+    return false;
+  }
+};

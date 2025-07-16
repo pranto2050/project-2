@@ -26,5 +26,19 @@
     "userEmail": "admin@friendsitzone.com",
     "saleDate": "2025-07-16",
     "soldBy": "admin-001"
+  },
+  {
+    "id": "sold-1752640919910",
+    "productID": "IT2025-1752640406811",
+    "productName": "tplink",
+    "quantitySold": 1,
+    "pricePerUnit": 35,
+    "totalPrice": 35,
+    "unit": "",
+    "timestamp": "2025-07-16T04:41:59.904Z",
+    "userId": "admin-001",
+    "userEmail": "admin@friendsitzone.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-001"
   }
 ]
