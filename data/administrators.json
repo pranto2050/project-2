@@ -7,5 +7,14 @@
     "points": 0,
     "purchaseHistory": [],
     "name": "System Administrator"
+  },
+  {
+    "name": "a",
+    "email": "a@gmail.com",
+    "password": "a",
+    "role": "admin",
+    "points": 0,
+    "purchaseHistory": [],
+    "id": "admin-1752640309387"
   }
 ]

@@ -73,6 +73,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
           ]);
           setCategories(categoriesData);
           setBrands(brandsData);
+          console.log('Loaded brands:', brandsData); // Debug log
         } catch (error) {
           console.error('Failed to load data:', error);
           setCategories([]);
@@ -94,14 +95,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
   // Filter brands based on selected category
   const getFilteredBrands = () => {
-    if (!formData.category) {
-      return brands; // Show all brands if no category selected
-    }
-    
-    // Filter brands that have the selected category in their categories array
-    return brands.filter(brand => 
-      brand.categories && brand.categories.includes(formData.category)
-    );
+    // For now, return all brands since categories aren't assigned to brands yet
+    return brands;
   };
 
   const loadExistingProductNames = async (category: string) => {
