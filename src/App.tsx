@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import SellerDashboard from './components/SellerDashboard';
 import UserDashboard from './components/UserDashboard';
 import PublicView from './components/PublicView';
-import { UserType, CartItem } from './types';
+import { User, CartItem } from './types';
 import { validateUserSession, getCurrentUser, logout } from './utils/auth';
 import Header from './components/Header';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function App() {
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [currentSection, setCurrentSection] = useState('home');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -49,7 +49,7 @@ function App() {
     initializeAuth();
   }, []);
 
-  const handleLogin = (loggedInUser: UserType) => {
+  const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
     setShowLogin(false);
   };
@@ -107,13 +107,9 @@ function App() {
 
       {user && currentSection === 'dashboard' ? (
         user.role === 'admin' ? (
-          <ErrorBoundary>
-            <AdminDashboard user={user} onLogout={handleLogout} />
-          </ErrorBoundary>
+          <AdminDashboard user={user} onLogout={handleLogout} />
         ) : user.role === 'seller' ? (
-          <ErrorBoundary>
-            <SellerDashboard user={user} onLogout={handleLogout} />
-          </ErrorBoundary>
+          <SellerDashboard user={user} onLogout={handleLogout} />
         ) : (
           <UserDashboard onLogout={handleLogout} />
         )

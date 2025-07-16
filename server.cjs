@@ -164,32 +164,22 @@ const writeJsonFile = async (filePath, data) => {
 
 // Products API
 app.get('/api/products', async (req, res) => {
-  const productsData = await readJsonFile(FILES.products);
-  // Handle both old array format and new object format
-  const products = productsData.products || productsData || [];
+  const products = await readJsonFile(FILES.products);
   res.json(products);
 });
 
 app.post('/api/products', async (req, res) => {
-  const productsData = await readJsonFile(FILES.products);
-  const products = productsData.products || productsData || [];
-  
-  // Generate new ID
-  const newId = Math.max(...products.map(p => p.id || 0), 0) + 1;
-  
-  // Ensure required fields are present
+  const products = await readJsonFile(FILES.products);
+  // Ensure subcategory and model fields are always present
   const newProduct = {
     ...req.body,
-    id: newId,
-    type: req.body.type || 'others',
+    id: `IT2025-${Date.now()}`,
+    subcategory: req.body.subcategory || '',
     model: req.body.model || ''
   };
-  
   products.push(newProduct);
   
-  // Save in new format
-  const updatedData = { products };
-  if (await writeJsonFile(FILES.products, updatedData)) {
+  if (await writeJsonFile(FILES.products, products)) {
     res.json({ success: true, product: newProduct });
   } else {
     res.status(500).json({ success: false, message: 'Failed to save product' });
@@ -197,22 +187,18 @@ app.post('/api/products', async (req, res) => {
 });
 
 app.put('/api/products/:id', async (req, res) => {
-  const productsData = await readJsonFile(FILES.products);
-  const products = productsData.products || productsData || [];
-  const index = products.findIndex(p => p.id == req.params.id);
+  const products = await readJsonFile(FILES.products);
+  const index = products.findIndex(p => p.id === req.params.id);
   
   if (index !== -1) {
-    // Update product
+    // Ensure subcategory and model fields are always present
     products[index] = {
       ...products[index],
       ...req.body,
-      type: req.body.type || products[index].type || 'others',
+      subcategory: req.body.subcategory || products[index].subcategory || '',
       model: req.body.model || products[index].model || ''
     };
-    
-    // Save in new format
-    const updatedData = { products };
-    if (await writeJsonFile(FILES.products, updatedData)) {
+    if (await writeJsonFile(FILES.products, products)) {
       res.json({ success: true, product: products[index] });
     } else {
       res.status(500).json({ success: false, message: 'Failed to update product' });

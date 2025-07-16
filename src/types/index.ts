@@ -9,16 +9,24 @@ export interface User {
 }
 
 export interface Product {
-  id: number | string;
-  brand: string;
-  type: string;
+  id: string;
+  name: string;
+  brand?: string;
+  supplier?: string;
+  addedDate: string;
+  pricePerUnit: number;
+  stock: number;
+  unit: string;
   category: string;
-  model: string;
+  subcategory?: string; // Added for filtering
+  model?: string; // Added for filtering
+  rating: number;
+  image: string;
   description: string;
-  price: number;
-  warranty: string;
-  availability: string;
-  features: string[];
+  specifications?: { [key: string]: string };
+  // New fields for product identification
+  commonId: string;
+  uniqueId: string;
 }
 
 export interface Purchase {

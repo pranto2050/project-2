@@ -1,0 +1,30 @@
+[
+  {
+    "id": "sold-1752637918249",
+    "productID": 1,
+    "productName": "ASUS TUF Gaming AX4200 Dual-Band WiFi 6 Gaming Router",
+    "quantitySold": 1,
+    "pricePerUnit": 16500,
+    "totalPrice": 16500,
+    "unit": "Piece",
+    "timestamp": "2025-07-16T03:51:58.245Z",
+    "userId": "admin-001",
+    "userEmail": "admin@friendsitzone.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-001"
+  },
+  {
+    "id": "sold-1752638052569",
+    "productID": 1,
+    "productName": "ASUS TUF Gaming AX4200 Dual-Band WiFi 6 Gaming Router",
+    "quantitySold": 1,
+    "pricePerUnit": 16500,
+    "totalPrice": 16500,
+    "unit": "Piece",
+    "timestamp": "2025-07-16T03:54:12.564Z",
+    "userId": "admin-001",
+    "userEmail": "admin@friendsitzone.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-001"
+  }
+]

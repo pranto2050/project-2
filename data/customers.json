@@ -1,0 +1,11 @@
+[
+  {
+    "id": "1752638695517",
+    "name": "John Doe",
+    "mobile": "01712345678",
+    "email": "john@example.com",
+    "address": "123 Main St",
+    "isRequiredCustomer": true,
+    "createdDate": "2025-07-16T04:04:55.517Z"
+  }
+]

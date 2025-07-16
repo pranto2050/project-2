@@ -31,9 +31,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
 
   // Security check - ensure user is authenticated
   useEffect(() => {
@@ -94,22 +94,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     setCart(prev => {
       const existingItem = prev.find(item => item.product.id === product.id);
       if (existingItem) {
-        // Check availability instead of stock count
-        if (product.availability === 'In stock') {
+        if (existingItem.quantity < product.stock) {
           return prev.map(item =>
             item.product.id === product.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
           );
         } else {
-          showNotification('Product is not available in stock');
+          showNotification('Cannot add more items than available in stock');
           return prev;
         }
       } else {
         return [...prev, { product, quantity: 1 }];
       }
     });
-    showNotification(`Added ${product.model} to cart`);
+    showNotification(`Added ${product.name} to cart`);
   };
 
   const addToSale = (product: Product) => {
@@ -120,7 +119,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
   const handleQuantityConfirm = (quantity: number) => {
     if (!selectedProduct) return;
 
-    const totalPrice = quantity * selectedProduct.price;
+    const totalPrice = quantity * selectedProduct.pricePerUnit;
     const saleItem: SaleItem = {
       product: selectedProduct,
       quantity,
@@ -140,7 +139,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
       }
     });
 
-    showNotification(`Added ${quantity} units of ${selectedProduct.model} to sale`);
+    showNotification(`Added ${quantity} ${selectedProduct.unit} of ${selectedProduct.name} to sale`);
     setSelectedProduct(null);
   };
 
@@ -160,19 +159,19 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     for (const item of salesItems) {
       totalAmount += item.totalPrice;
       pointsEarned += Math.floor(item.totalPrice);
-      await updateStock(String(item.product.id), 0); // Note: New structure doesn't track stock
+      await updateStock(item.product.id, item.product.stock - item.quantity);
       const sale: SaleRecord = {
-        productID: String(item.product.id),
-        productName: item.product.model,
+        productID: item.product.id,
+        productName: item.product.name,
         quantitySold: item.quantity,
-        pricePerUnit: item.product.price,
+        pricePerUnit: item.product.pricePerUnit,
         totalPrice: item.totalPrice,
-        unit: 'units',
+        unit: item.product.unit,
         timestamp: new Date().toISOString(),
         userId: user.id,
         userEmail: user.email,
-        commonId: String(item.product.id),
-        uniqueId: String(item.product.id)
+        commonId: item.product.commonId || item.product.id,
+        uniqueId: item.product.uniqueId || item.product.id
       };
       await logSale(sale);
     }
@@ -182,8 +181,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
       purchaseHistory: [
         ...user.purchaseHistory,
         ...salesItems.map(item => ({
-          productId: String(item.product.id),
-          productName: item.product.model,
+          productId: item.product.id,
+          productName: item.product.name,
           quantity: item.quantity,
           price: item.totalPrice,
           timestamp: new Date().toISOString(),
@@ -227,24 +226,24 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     let pointsEarned = 0;
 
     cart.forEach(item => {
-      const itemTotal = item.product.price * item.quantity;
+      const itemTotal = item.product.pricePerUnit * item.quantity;
       totalAmount += itemTotal;
       pointsEarned += Math.floor(itemTotal);
 
-      updateStock(String(item.product.id), 0); // Note: New structure doesn't track stock
+      updateStock(item.product.id, item.product.stock - item.quantity);
 
       const sale: SaleRecord = {
-        productID: String(item.product.id),
-        productName: item.product.model,
+        productID: item.product.id,
+        productName: item.product.name,
         quantitySold: item.quantity,
-        pricePerUnit: item.product.price,
+        pricePerUnit: item.product.pricePerUnit,
         totalPrice: itemTotal,
-        unit: 'units',
+        unit: item.product.unit,
         timestamp: new Date().toISOString(),
         userId: user.id,
         userEmail: user.email,
-        commonId: String(item.product.id),
-        uniqueId: String(item.product.id)
+        commonId: item.product.commonId || item.product.id,
+        uniqueId: item.product.uniqueId || item.product.id
       };
       logSale(sale);
     });
@@ -255,12 +254,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
       purchaseHistory: [
         ...user.purchaseHistory,
         ...cart.map(item => ({
-          productId: String(item.product.id),
-          productName: item.product.model,
+          productId: item.product.id,
+          productName: item.product.name,
           quantity: item.quantity,
-          price: item.product.price * item.quantity,
+          price: item.product.pricePerUnit * item.quantity,
           timestamp: new Date().toISOString(),
-          pointsEarned: Math.floor(item.product.price * item.quantity)
+          pointsEarned: Math.floor(item.product.pricePerUnit * item.quantity)
         }))
       ]
     };
@@ -278,7 +277,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     onLogout();
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (item.product.pricePerUnit * item.quantity), 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleSeeMore = (product: Product) => {
@@ -288,9 +287,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
 
   const filteredProducts = products.filter(p =>
     (!selectedCategory || p.category === selectedCategory) &&
-    (!selectedType || p.type === selectedType) &&
+    (!selectedSubcategory || p.subcategory === selectedSubcategory) &&
     (!selectedBrand || p.brand === selectedBrand) &&
-    (!selectedStatus || p.availability === selectedStatus)
+    (!selectedModel || p.model === selectedModel)
   );
 
   return (
@@ -356,12 +355,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
               products={products}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
-              selectedType={selectedType}
-              setSelectedType={setSelectedType}
+              selectedSubcategory={selectedSubcategory}
+              setSelectedSubcategory={setSelectedSubcategory}
               selectedBrand={selectedBrand}
               setSelectedBrand={setSelectedBrand}
-              selectedStatus={selectedStatus}
-              setSelectedStatus={setSelectedStatus}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map(product => (
@@ -441,34 +440,36 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
                     key={item.product.id}
                     className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 flex items-center space-x-6"
                   >
-                    <div className="w-20 h-20 bg-slate-700 rounded-lg flex items-center justify-center">
-                      <Package className="w-10 h-10 text-slate-400" />
-                    </div>
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white">{item.product.model}</h3>
+                      <h3 className="text-lg font-semibold text-white">{item.product.name}</h3>
                       <p className="text-slate-400">ID: {item.product.id}</p>
-                      <p className="text-emerald-400 font-bold">৳{item.product.price}/unit</p>
+                      <p className="text-emerald-400 font-bold">৳{item.product.pricePerUnit}/{item.product.unit}</p>
                     </div>
                     <div className="flex items-center space-x-3">
                       <button
-                        onClick={() => updateCartQuantity(String(item.product.id), item.quantity - 1)}
+                        onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
                         className="p-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition-all duration-300"
                       >
                         <Minus className="w-4 h-4 text-white" />
                       </button>
                       <span className="text-white font-medium w-8 text-center">{item.quantity}</span>
                       <button
-                        onClick={() => updateCartQuantity(String(item.product.id), item.quantity + 1)}
-                        disabled={item.product.availability !== 'In stock'}
+                        onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
+                        disabled={item.quantity >= item.product.stock}
                         className="p-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Plus className="w-4 h-4 text-white" />
                       </button>
                     </div>
                     <div className="text-right">
-                      <p className="text-white font-bold">৳{(item.product.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-white font-bold">৳{(item.product.pricePerUnit * item.quantity).toFixed(2)}</p>
                       <button
-                        onClick={() => removeFromCart(String(item.product.id))}
+                        onClick={() => removeFromCart(item.product.id)}
                         className="text-red-400 hover:text-red-300 mt-2"
                       >
                         <Trash2 className="w-4 h-4" />

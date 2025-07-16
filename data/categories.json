@@ -14,21 +14,21 @@
     ]
   },
   {
-    "id": "cat-2",
-    "name": "Computing",
-    "description": "Computers and components",
-    "createdDate": "2024-01-01"
+    "id": "cat-1752635116312",
+    "name": "Storage",
+    "description": "Document safety",
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "cat-3",
-    "name": "Camera",
-    "description": "Cameras and photography equipment",
-    "createdDate": "2024-01-01"
+    "id": "cat-1752635547263",
+    "name": "Switch",
+    "description": "Connect multiple device",
+    "createdDate": "2025-07-16"
   },
   {
-    "id": "cat-1752516626533",
-    "name": "HDD",
-    "description": "Save your data",
-    "createdDate": "2025-07-14"
+    "id": "cat-1752635584167",
+    "name": "Accessories",
+    "description": "Internet installation accessories",
+    "createdDate": "2025-07-16"
   }
 ]

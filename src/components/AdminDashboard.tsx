@@ -20,7 +20,6 @@ import {
   getBrands
 } from '../utils/storage';
 import ProductCard from './ProductCard';
-import ProductFilterBar from './ProductFilterBar';
 import SalesModal from './SalesModal';
 import PurchaseModal from './PurchaseModal';
 import ReturnModal from './ReturnModal';
@@ -33,26 +32,27 @@ import QuantityModal from './QuantityModal';
 import PurchaseQuantityModal from './PurchaseQuantityModal';
 import WarrantyManagement from './WarrantyManagement';
 import BrandManagement from './BrandManagement';
+import ProductFilterBar from './ProductFilterBar';
 import { 
-  Package, 
   ShoppingCart, 
+  Package, 
   TrendingUp, 
-  RefreshCw, 
   Users, 
-  DollarSign, 
-  BarChart3, 
-  Filter, 
-  Search, 
-  Plus, 
-  Monitor, 
   LogOut, 
-  Calendar, 
-  AlertTriangle, 
-  Building2, 
-  ShoppingBag, 
-  Shield, 
-  Trash2, 
-  X 
+  Plus, 
+  Search, 
+  Filter,
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Trash2,
+  Shield,
+  RefreshCw,
+  Monitor,
+  AlertTriangle,
+  X,
+  ShoppingBag,
+  Building2
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -100,8 +100,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [brands, setBrands] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
 
   useEffect(() => {
     loadData();
@@ -230,7 +230,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const handleQuantityConfirm = (quantity: number) => {
     if (!selectedProduct) return;
 
-    const totalPrice = quantity * selectedProduct.price;
+    const totalPrice = quantity * selectedProduct.pricePerUnit;
     const saleItem: SaleItem = {
       product: selectedProduct,
       quantity,
@@ -250,14 +250,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       }
     });
 
-    showNotification(`Added ${quantity} units of ${selectedProduct.model} to sale`);
+    showNotification(`Added ${quantity} ${selectedProduct.unit} of ${selectedProduct.name} to sale`);
     setSelectedProduct(null);
   };
 
   const handlePurchaseQuantityConfirm = (quantity: number, customPrice?: number) => {
     if (!selectedProduct) return;
 
-    const pricePerUnit = customPrice || selectedProduct.price;
+    const pricePerUnit = customPrice || selectedProduct.pricePerUnit;
     const totalCost = quantity * pricePerUnit;
     const purchaseItem: AdminPurchaseItem = {
       product: selectedProduct,
@@ -278,7 +278,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       }
     });
 
-    showNotification(`Added ${quantity} units of ${selectedProduct.model} to purchase`);
+    showNotification(`Added ${quantity} ${selectedProduct.unit} of ${selectedProduct.name} to purchase`);
     setSelectedProduct(null);
   };
 
@@ -301,19 +301,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
       // Process each sale item with warranty information
       for (const item of salesItems) {
-        // Update stock - using string conversion for ID
-        await updateStock(String(item.product.id), 0); // Note: New structure doesn't track stock
+        // Update stock
+        await updateStock(item.product.id, item.product.stock - item.quantity);
 
         // Create sale record with warranty info
         const saleData = {
           productId: item.product.id,
-          productName: item.product.model,
+          productName: item.product.name,
           customerId: user.id,
           customerEmail: user.email,
           quantity: item.quantity,
-          pricePerUnit: item.product.price,
+          pricePerUnit: item.product.pricePerUnit,
           totalPrice: item.totalPrice,
-          unit: 'units',
+          unit: item.product.unit,
           currency: 'BDT',
           dateOfSale: warrantyInfo?.dateOfSale || new Date().toISOString().split('T')[0],
           warrantyEndDate: warrantyInfo?.warrantyEndDate || (() => {
@@ -340,17 +340,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
         // Also log to the old sales system for backward compatibility
         const sale: SaleRecord = {
-          productID: String(item.product.id),
-          productName: item.product.model,
+          productID: item.product.id,
+          productName: item.product.name,
           quantitySold: item.quantity,
-          pricePerUnit: item.product.price,
+          pricePerUnit: item.product.pricePerUnit,
           totalPrice: item.totalPrice,
-          unit: 'units',
+          unit: item.product.unit,
           timestamp: customDateTime || new Date().toISOString(),
           userId: user.id,
           userEmail: user.email,
-          commonId: String(item.product.id),
-          uniqueId: String(item.product.id)
+          commonId: item.product.commonId,
+          uniqueId: item.product.uniqueId
         };
         await logSale(sale);
       }
@@ -372,18 +372,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     setLoading(true);
     try {
       for (const item of purchaseItems) {
-        await updateStock(String(item.product.id), 0); // Note: New structure doesn't track stock
+        await updateStock(item.product.id, item.product.stock + item.quantity);
         const purchase: PurchaseRecord = {
-          productID: String(item.product.id),
-          productName: item.product.model,
+          productID: item.product.id,
+          productName: item.product.name,
           quantityAdded: item.quantity,
           pricePerUnit: item.totalCost / item.quantity,
           totalCost: item.totalCost,
           timestamp: customDateTime || new Date().toISOString(),
           adminId: user.id,
-          supplier: item.product.brand, // Using brand as supplier
-          commonId: String(item.product.id),
-          uniqueId: String(item.product.id)
+          supplier: item.product.supplier,
+          commonId: item.product.commonId,
+          uniqueId: item.product.uniqueId
         };
         await logPurchase(purchase);
       }
@@ -404,14 +404,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     try {
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error('Product not found');
-      await updateStock(productId, 0); // Note: New structure doesn't track stock
+      await updateStock(productId, product.stock + quantity);
       const returnRecord: ReturnRecord = {
         productID: productId,
-        productName: product.model,
+        productName: product.name,
         quantityReturned: quantity,
-        pricePerUnit: product.price,
-        totalRefund: quantity * product.price,
-        unit: 'units',
+        pricePerUnit: product.pricePerUnit,
+        totalRefund: quantity * product.pricePerUnit,
+        unit: product.unit,
         timestamp: new Date().toISOString(),
         adminId: user.id,
         reason
@@ -482,10 +482,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const filteredProducts = products
     .filter(product =>
       (!selectedCategory || product.category === selectedCategory) &&
-      (!selectedType || product.type === selectedType) &&
+      (!selectedSubcategory || product.subcategory === selectedSubcategory) &&
       (!selectedBrand || product.brand === selectedBrand) &&
-      (!selectedStatus || product.availability === selectedStatus) &&
-      (product.model || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (!selectedModel || product.model === selectedModel) &&
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       let aValue = a[sortBy as keyof Product];
@@ -509,7 +509,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.totalCost, 0);
   const totalReturns = returns.reduce((sum, returnRecord) => sum + returnRecord.totalRefund, 0);
   const netProfit = totalRevenue - totalPurchases - totalReturns;
-  const lowStockProducts = products.filter(p => p.availability === 'Out of Stock' || p.availability === 'Limited stock');
+  const lowStockProducts = products.filter(p => p.stock <= 10);
 
   const handleSeeMore = (product: Product) => {
     setSelectedProduct(product);
@@ -734,8 +734,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {lowStockProducts.slice(0, 6).map(product => (
                     <div key={product.id} className="bg-slate-800/30 rounded-xl p-4">
-                      <h4 className="text-white font-medium">{product.model}</h4>
-                      <p className="text-red-400 text-sm">Status: {product.availability}</p>
+                      <h4 className="text-white font-medium">{product.name}</h4>
+                      <p className="text-red-400 text-sm">Only {product.stock} {product.unit} left</p>
                     </div>
                   ))}
                 </div>
@@ -779,12 +779,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 products={products}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
-                selectedType={selectedType}
-                setSelectedType={setSelectedType}
+                selectedSubcategory={selectedSubcategory}
+                setSelectedSubcategory={setSelectedSubcategory}
                 selectedBrand={selectedBrand}
                 setSelectedBrand={setSelectedBrand}
-                selectedStatus={selectedStatus}
-                setSelectedStatus={setSelectedStatus}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
               />
               <select
                 value={`${sortBy}-${sortOrder}`}
@@ -814,7 +814,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   onAddToPurchase={addToPurchase}
                   onSeeMore={handleSeeMore}
                   onEdit={handleProductEdit}
-                  onDelete={(product) => handleProductDelete(String(product.id))}
+                  onDelete={(product) => handleProductDelete(product.id)}
                   showSellButton={true}
                   showBuyButton={true}
                   showSeeMore={true}
@@ -883,20 +883,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-16 h-16 bg-slate-700 rounded-lg flex items-center justify-center">
-                            <Package className="w-8 h-8 text-slate-400" />
-                          </div>
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
                           <div className="flex-1">
-                            <h3 className="text-white font-semibold">{item.product.model}</h3>
+                            <h3 className="text-white font-semibold">{item.product.name}</h3>
                             <p className="text-slate-400 text-sm">ID: {item.product.id}</p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mt-2">
                               <div>
                                 <span className="text-slate-400">Quantity:</span>
-                                <p className="text-white">{item.quantity} units</p>
+                                <p className="text-white">{item.quantity} {item.product.unit}</p>
                               </div>
                               <div>
                                 <span className="text-slate-400">Price/Unit:</span>
-                                <p className="text-white">৳{item.product.price}</p>
+                                <p className="text-white">৳{item.product.pricePerUnit}</p>
                               </div>
                               <div>
                                 <span className="text-slate-400">Total:</span>
@@ -906,7 +908,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                           </div>
                         </div>
                         <button
-                          onClick={() => removeFromSale(String(item.product.id))}
+                          onClick={() => removeFromSale(item.product.id)}
                           className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1096,28 +1098,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                       <div key={index} className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
                         <div className="flex items-center space-x-4">
                           {/* Product Image */}
-                          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
-                            <Package className="w-10 h-10 text-slate-400" />
+                          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                            <img
+                              src={item.product.image}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           
                           {/* Product Details */}
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-white font-semibold text-lg truncate">{item.product.model}</h4>
+                            <h4 className="text-white font-semibold text-lg truncate">{item.product.name}</h4>
                             <p className="text-slate-400 text-sm">Brand: {item.product.brand}</p>
                             <p className="text-slate-400 text-sm">Category: {item.product.category}</p>
-                            <p className="text-slate-400 text-sm">Status: {item.product.availability}</p>
+                            <p className="text-slate-400 text-sm">Current Stock: {item.product.stock} {item.product.unit}</p>
                           </div>
                           
                           {/* Quantity and Price */}
                           <div className="text-right">
                             <p className="text-blue-400 font-bold text-lg">
-                              {item.quantity} units
+                              {item.quantity} {item.product.unit}
                             </p>
                             <p className="text-slate-300 text-sm">
-                              ৳{item.product.price} each
+                              ${item.product.pricePerUnit} each
                             </p>
                             <p className="text-green-400 font-bold">
-                              Total: ৳{item.totalCost}
+                              Total: ${item.totalCost}
                             </p>
                           </div>
                           

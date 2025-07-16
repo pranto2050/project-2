@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShoppingBag, Trash2, Package } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, Download, Trash2 } from 'lucide-react';
 import { AdminPurchaseItem } from '../types';
 
 interface PurchaseModalProps {
@@ -80,19 +80,23 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                     className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/30 rounded-xl p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all duration-300"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-slate-700 rounded-lg flex items-center justify-center">
-                        <Package className="w-8 h-8 text-slate-400" />
-                      </div>
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
                       <div>
-                        <h3 className="text-white font-semibold">{item.product.model}</h3>
+                        <h3 className="text-white font-semibold">{item.product.name}</h3>
                         <p className="text-slate-400 text-sm">ID: {item.product.id}</p>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className="text-blue-400 text-sm">
-                            ৳{item.product.price}/unit
+                            ₹{item.product.pricePerUnit}/{item.product.unit}
                           </span>
-                          <span className="text-slate-500 text-xs bg-slate-700/50 px-2 py-1 rounded">
-                            {item.product.brand}
-                          </span>
+                          {item.product.supplier && (
+                            <span className="text-slate-500 text-xs bg-slate-700/50 px-2 py-1 rounded">
+                              {item.product.supplier}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -100,14 +104,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <p className="text-white font-medium">
-                          {item.quantity} units
+                          {item.quantity} {item.product.unit}
                         </p>
                         <p className="text-blue-400 font-bold text-lg">
-                          ৳{item.totalCost.toFixed(2)}
+                          ₹{item.totalCost.toFixed(2)}
                         </p>
                       </div>
                       <button
-                        onClick={() => onRemoveItem(String(item.product.id))}
+                        onClick={() => onRemoveItem(item.product.id)}
                         className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-all duration-300"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -170,7 +174,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
               <div className="text-white">
                 <p className="text-lg">Total Items: <span className="font-bold text-blue-400">{totalItems}</span></p>
                 <p className="text-2xl font-bold text-blue-400">
-                  Total Cost: ৳{totalCost.toFixed(2)}
+                  Total Cost: ₹{totalCost.toFixed(2)}
                 </p>
               </div>
             </div>

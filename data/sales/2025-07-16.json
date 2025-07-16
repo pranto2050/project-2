@@ -15,19 +15,6 @@
     "timestamp": "2025-07-16T03:51:58.242Z"
   },
   {
-    "productID": 1,
-    "productName": "ASUS TUF Gaming AX4200 Dual-Band WiFi 6 Gaming Router",
-    "quantitySold": 1,
-    "pricePerUnit": 16500,
-    "totalPrice": 16500,
-    "unit": "Piece",
-    "timestamp": "2025-07-16T03:51:58.245Z",
-    "userId": "admin-001",
-    "userEmail": "admin@friendsitzone.com",
-    "commonId": "ASUS-TUF",
-    "uniqueId": "ASUSTUF-1752635177869-178"
-  },
-  {
     "saleId": "s-1752638052559",
     "productId": 1,
     "productName": "ASUS TUF Gaming AX4200 Dual-Band WiFi 6 Gaming Router",
@@ -41,18 +28,5 @@
     "dateOfSale": "2025-07-16",
     "warrantyEndDate": "2026-07-16",
     "timestamp": "2025-07-16T03:54:12.560Z"
-  },
-  {
-    "productID": 1,
-    "productName": "ASUS TUF Gaming AX4200 Dual-Band WiFi 6 Gaming Router",
-    "quantitySold": 1,
-    "pricePerUnit": 16500,
-    "totalPrice": 16500,
-    "unit": "Piece",
-    "timestamp": "2025-07-16T03:54:12.564Z",
-    "userId": "admin-001",
-    "userEmail": "admin@friendsitzone.com",
-    "commonId": "ASUS-TUF",
-    "uniqueId": "ASUSTUF-1752635177869-178"
   }
 ]
