@@ -290,7 +290,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     setPurchaseItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }) => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }) => {
     if (salesItems.length === 0) return;
 
     const receiptNumber = `RCP${Date.now()}`;
@@ -322,7 +322,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             endDate.setFullYear(endDate.getFullYear() + 1); // Default 1 year warranty
             return endDate.toISOString().split('T')[0];
           })(),
-          timestamp: customDateTime || new Date().toISOString()
+          timestamp: customDateTime || new Date().toISOString(),
+          // Add customer details if provided
+          customerMobile: customerDetails?.mobile,
+          customerAddress: customerDetails?.address
         };
 
         // Save sale with warranty information using the new API
@@ -350,7 +353,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           userId: user.id,
           userEmail: user.email,
           commonId: item.product.commonId,
-          uniqueId: item.product.uniqueId
+          uniqueId: item.product.uniqueId,
+          // Add customer details if provided
+          customer: customerDetails ? {
+            mobile: customerDetails.mobile,
+            email: customerDetails.email,
+            address: customerDetails.address
+          } : undefined
         };
         await logSale(sale);
       }

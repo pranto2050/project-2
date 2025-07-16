@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Download, Trash2, ShoppingBag, Calendar, Shield } from 'lucide-react';
-import { SaleItem } from '../types';
+import { X, Download, Trash2, ShoppingBag, Calendar, Shield, User } from 'lucide-react';
+import { SaleItem, CustomerDetails } from '../types';
 import { downloadSalesData } from '../utils/storage';
 
 interface SalesModalProps {
@@ -8,7 +8,7 @@ interface SalesModalProps {
   onClose: () => void;
   salesItems: SaleItem[];
   onRemoveItem: (productId: string) => void;
-  onCompleteSale: (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }) => void;
+  onCompleteSale: (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: CustomerDetails) => void;
 }
 
 const SalesModal: React.FC<SalesModalProps> = ({
@@ -26,6 +26,11 @@ const SalesModal: React.FC<SalesModalProps> = ({
   const [warrantyPeriod, setWarrantyPeriod] = useState('1 year');
   const [customWarrantyEndDate, setCustomWarrantyEndDate] = useState('');
   const [useCustomWarrantyEnd, setUseCustomWarrantyEnd] = useState(false);
+
+  // Customer information fields
+  const [customerMobile, setCustomerMobile] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
 
   if (!isOpen) return null;
 
@@ -69,8 +74,15 @@ const SalesModal: React.FC<SalesModalProps> = ({
       dateOfSale,
       warrantyEndDate
     };
+
+    // Prepare customer details if mobile number is provided (mobile is required)
+    const customerDetails: CustomerDetails | undefined = customerMobile.trim() ? {
+      mobile: customerMobile.trim(),
+      email: customerEmail.trim(),
+      address: customerAddress.trim()
+    } : undefined;
     
-    onCompleteSale(dateTimeToUse, warrantyInfo);
+    onCompleteSale(dateTimeToUse, warrantyInfo, customerDetails);
   };
 
   const getCurrentDateTime = () => {
@@ -85,9 +97,9 @@ const SalesModal: React.FC<SalesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-b border-white/10 p-6">
+        <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-b border-white/10 p-6 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
@@ -107,8 +119,10 @@ const SalesModal: React.FC<SalesModalProps> = ({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Content */}
+          <div className="p-6">
           {salesItems.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -161,6 +175,59 @@ const SalesModal: React.FC<SalesModalProps> = ({
         {/* Date/Time Section */}
         {salesItems.length > 0 && (
           <div className="bg-white/5 border-t border-white/10 p-6">
+            {/* Customer Information Section - Top Priority */}
+            <div className="mb-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-500 rounded-lg flex items-center justify-center">
+                  <User className="w-6 h-6 text-slate-900" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Customer Information</h3>
+                  <p className="text-slate-400 text-sm">Add customer details (mobile number is required)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Mobile Number (Required) */}
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">
+                    Mobile Number <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerMobile}
+                    onChange={(e) => setCustomerMobile(e.target.value)}
+                    placeholder="e.g., +8801XXXXXXXXX"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="customer@example.com"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all"
+                  />
+                </div>
+
+                {/* Customer Address */}
+                <div className="md:col-span-2">
+                  <label className="block text-slate-400 text-sm mb-2">Address</label>
+                  <textarea
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    placeholder="Enter customer's full address"
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="mb-4">
               <div className="flex items-center space-x-3 mb-3">
                 <input
@@ -198,7 +265,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
             </div>
 
             {/* Warranty Information Section */}
-            <div className="mt-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+            <div className="mt-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-slate-900" />
@@ -285,10 +352,11 @@ const SalesModal: React.FC<SalesModalProps> = ({
             </div>
           </div>
         )}
+        </div>
 
-        {/* Footer */}
+        {/* Footer - Fixed at bottom */}
         {salesItems.length > 0 && (
-          <div className="bg-white/5 border-t border-white/10 p-6">
+          <div className="bg-white/5 border-t border-white/10 p-6 flex-shrink-0">
             <div className="flex items-center justify-between mb-6">
               <div className="text-white">
                 <p className="text-lg">Total Items: <span className="font-bold">{totalItems}</span></p>

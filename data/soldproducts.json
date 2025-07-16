@@ -40,5 +40,19 @@
     "userEmail": "admin@friendsitzone.com",
     "saleDate": "2025-07-16",
     "soldBy": "admin-001"
+  },
+  {
+    "id": "sold-1752646496729",
+    "productID": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "quantitySold": 2,
+    "pricePerUnit": 20,
+    "totalPrice": 40,
+    "unit": "Picec",
+    "timestamp": "2025-07-16T06:14:56.720Z",
+    "userId": "admin-1752640309387",
+    "userEmail": "a@gmail.com",
+    "saleDate": "2025-07-16",
+    "soldBy": "admin-1752640309387"
   }
 ]

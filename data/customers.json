@@ -1,20 +1,22 @@
 [
   {
-    "id": "1752638695517",
+    "id": "cust-001",
+    "mobile": "+8801712345678",
+    "email": "customer1@example.com",
+    "address": "123 Main Street, Dhaka, Bangladesh",
     "name": "John Doe",
-    "mobile": "01712345678",
-    "email": "john@example.com",
-    "address": "123 Main St",
-    "isRequiredCustomer": true,
-    "createdDate": "2025-07-16T04:04:55.517Z"
+    "registrationDate": "2025-07-16T00:00:00.000Z",
+    "totalPurchases": 0,
+    "lastPurchaseDate": null
   },
   {
-    "id": "1752640919862",
-    "name": "fhgfjfhg",
-    "mobile": "019792242424",
-    "email": "gfhg@gfg.com",
-    "address": "",
-    "isRequiredCustomer": false,
-    "createdDate": "2025-07-16T04:41:59.863Z"
+    "id": "cust-002", 
+    "mobile": "+8801987654321",
+    "email": "customer2@example.com",
+    "address": "456 Park Avenue, Chittagong, Bangladesh",
+    "name": "Jane Smith",
+    "registrationDate": "2025-07-16T00:00:00.000Z",
+    "totalPurchases": 0,
+    "lastPurchaseDate": null
   }
 ]

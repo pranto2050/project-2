@@ -20,5 +20,27 @@
     "networkItem": "Router",
     "subcategory": "",
     "model": ""
+  },
+  {
+    "id": "IT2025-1752645505642",
+    "name": "sdfsdf",
+    "brand": "D-Link",
+    "brandDescription": "Offers a range of routers for home and business",
+    "brandLogo": "",
+    "supplier": "dsf",
+    "addedDate": "2025-07-16",
+    "pricePerUnit": 20,
+    "stock": 38,
+    "unit": "Picec",
+    "category": "Network",
+    "rating": 1.4,
+    "image": "",
+    "description": "",
+    "specifications": {},
+    "commonId": "DSF",
+    "uniqueId": "DSF-1752645480046-954",
+    "networkItem": "Switch",
+    "subcategory": "",
+    "model": ""
   }
 ]
