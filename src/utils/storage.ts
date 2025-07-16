@@ -250,6 +250,17 @@ export const searchWarrantyByProductId = async (productId: string): Promise<{ su
   }
 };
 
+export const searchWarrantyByQuery = async (searchQuery: string): Promise<{ success: boolean; warranties?: any[]; message?: string }> => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/warranty/search/${encodeURIComponent(searchQuery)}`);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Failed to search warranty:', error);
+    return { success: false, message: 'Failed to search warranty information' };
+  }
+};
+
 export const approveWarrantyClaim = async (approvalData: any): Promise<{ success: boolean; approvalId?: string; message?: string }> => {
   try {
     const response = await fetch('http://localhost:3001/api/warranty/approve', {

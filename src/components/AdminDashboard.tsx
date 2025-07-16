@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Product, SaleRecord, PurchaseRecord, ReturnRecord, User as UserType, SaleItem, AdminPurchaseItem, Category, DailySales } from '../types';
+import { 
+  Product, 
+  SaleRecord, 
+  PurchaseRecord, 
+  ReturnRecord, 
+  User as UserType, 
+  SaleItem, 
+  AdminPurchaseItem, 
+  Category, 
+  DailySales 
+} from '../types';
 import { 
   getProducts, 
   getCategories, 
@@ -18,7 +28,30 @@ import {
   getSoldProducts,
   getBrands
 } from '../utils/storage';
+import { 
+  Monitor,
+  LogOut,
+  BarChart3,
+  Package,
+  ShoppingCart,
+  TrendingUp,
+  RefreshCw,
+  Shield,
+  Filter,
+  Building2,
+  ShoppingBag,
+  Users,
+  Trash2,
+  DollarSign,
+  Calendar,
+  AlertTriangle,
+  Plus,
+  X
+} from 'lucide-react';
+
+// Component imports
 import ProductCard from './ProductCard';
+import ProductFilterBar from './ProductFilterBar';
 import SalesModal from './SalesModal';
 import PurchaseModal from './PurchaseModal';
 import ReturnModal from './ReturnModal';
@@ -31,27 +64,7 @@ import QuantityModal from './QuantityModal';
 import PurchaseQuantityModal from './PurchaseQuantityModal';
 import WarrantyManagement from './WarrantyManagement';
 import BrandManagement from './BrandManagement';
-import ProductFilterBar from './ProductFilterBar';
-import { 
-  ShoppingCart, 
-  Package, 
-  TrendingUp, 
-  Users, 
-  LogOut, 
-  Plus, 
-  Filter,
-  BarChart3,
-  Calendar,
-  DollarSign,
-  Trash2,
-  Shield,
-  RefreshCw,
-  Monitor,
-  AlertTriangle,
-  X,
-  ShoppingBag,
-  Building2
-} from 'lucide-react';
+import SaleDetailModal from './SaleDetailModal';
 
 interface AdminDashboardProps {
   user: UserType;
@@ -97,7 +110,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     customerName?: string;
     customerEmail?: string;
     customerMobile?: string;
+    customerAddress?: string;
     soldByEmail?: string;
+    warrantyEndDate?: string;
   }>>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
@@ -116,6 +131,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [selectedSaleItem, setSelectedSaleItem] = useState<{
+    saleId: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+    pricePerUnit: number;
+    totalPrice: number;
+    unit: string;
+    dateOfSale: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerMobile?: string;
+    soldByEmail?: string;
+    warrantyEndDate?: string;
+    customerAddress?: string;
+  } | null>(null);
+  const [showSaleDetailModal, setShowSaleDetailModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -961,37 +993,99 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Sold Products</h2>
             
-            {soldProducts.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-12 text-center shadow-lg shadow-cyan-500/10">
-                <Package className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">No Items Sold</h3>
-                <p className="text-slate-400">No products have been sold yet. Sales will appear here once items are sold.</p>
-                <button
-                  onClick={() => setActiveTab('sales')}
-                  className="mt-4 inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-slate-900 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg shadow-cyan-500/25"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>Start Selling</span>
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-6 shadow-lg shadow-cyan-500/10">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-white">
-                    Total Sold Products: {soldProducts.length}
-                  </h3>
-                  <div className="text-right">
-                    <p className="text-slate-400 text-sm">Total Revenue</p>
-                    <p className="text-2xl font-bold text-green-400">
-                      ৳{soldProducts.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)}
-                    </p>
-                  </div>
+            {/* Customer Search Box */}
+            <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 mb-6 shadow-lg shadow-cyan-500/10">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <Package className="w-5 h-5 mr-2 text-cyan-400" />
+                🔍 Search Customer
+              </h3>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Package className="h-5 w-5 text-slate-400" />
                 </div>
-{/* Table Design */}
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1400px]">
-                    <thead>
-                       <tr className="border-b border-slate-700">
+                <input
+                  type="text"
+                  placeholder="Search by customer mobile number or email address..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+              {searchTerm && (
+                <p className="mt-2 text-sm text-slate-400">
+                  Searching for: "{searchTerm}" in customer mobile numbers and email addresses
+                </p>
+              )}
+            </div>
+            
+            {(() => {
+              // Filter sold products based on search term
+              const filteredSoldProducts = soldProducts.filter(item => {
+                if (!searchTerm.trim()) return true;
+                const searchLower = searchTerm.toLowerCase();
+                return (
+                  item.customerMobile?.toLowerCase().includes(searchLower) ||
+                  item.customerEmail?.toLowerCase().includes(searchLower) ||
+                  item.customerName?.toLowerCase().includes(searchLower) ||
+                  item.productName?.toLowerCase().includes(searchLower)
+                );
+              });
+
+              if (filteredSoldProducts.length === 0) {
+                return (
+                  <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-12 text-center shadow-lg shadow-cyan-500/10">
+                    <Package className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">
+                      {searchTerm ? 'No Results Found' : 'No Items Sold'}
+                    </h3>
+                    <p className="text-slate-400">
+                      {searchTerm 
+                        ? `No customers found matching "${searchTerm}". Try a different search term.`
+                        : 'No products have been sold yet. Sales will appear here once items are sold.'
+                      }
+                    </p>
+                    {!searchTerm && (
+                      <button
+                        onClick={() => setActiveTab('sales')}
+                        className="mt-4 inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-slate-900 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg shadow-cyan-500/25"
+                      >
+                        <ShoppingCart className="w-5 h-5" />
+                        <span>Start Selling</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-6 shadow-lg shadow-cyan-500/10">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-white">
+                      {searchTerm 
+                        ? `Found ${filteredSoldProducts.length} results for "${searchTerm}"`
+                        : `Total Sold Products: ${filteredSoldProducts.length}`
+                      }
+                    </h3>
+                    <div className="text-right">
+                      <p className="text-slate-400 text-sm">Total Revenue</p>
+                      <p className="text-2xl font-bold text-green-400">
+                        ৳{filteredSoldProducts.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Table Design */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1800px]">
+                      <thead>
+                        <tr className="border-b border-slate-700">
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-48 min-w-[200px]">Product</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">ID</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Quantity</th>
@@ -999,91 +1093,127 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Total</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">Sale Date</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-40 min-w-[150px]">Customer Name</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-36 min-w-[140px]">Warranty Status</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-36 min-w-[140px]">Customer Mobile</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-48 min-w-[180px]">Customer Email</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-48 min-w-[180px]">Customer Address</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-44 min-w-[160px]">Sold By</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {soldProducts.map((item) => (
+                        {filteredSoldProducts.map((item) => (
                           <tr
                             key={item.saleId}
-                              className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
-                            >
-          <td className="py-4 px-6 w-48 min-w-[200px]">
-            <div className="font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis" title={item.productName}>
-              {item.productName}
-            </div>
-          </td>
-          <td className="py-4 px-6 w-32 min-w-[120px]">
-            <span className="text-cyan-400 font-mono text-sm whitespace-nowrap">{item.productId}</span>
-          </td>
-          <td className="py-4 px-6 w-28 min-w-[100px]">
-            <span className="text-white whitespace-nowrap">{item.quantity} {item.unit}</span>
-          </td>
-          <td className="py-4 px-6 w-24 min-w-[90px]">
-            <span className="text-slate-300 whitespace-nowrap">৳{item.pricePerUnit.toFixed(2)}</span>
-          </td>
-          <td className="py-4 px-6 w-28 min-w-[100px]">
-            <span className="text-green-400 font-semibold whitespace-nowrap">৳{item.totalPrice.toFixed(2)}</span>
-          </td>
-          <td className="py-4 px-6 w-32 min-w-[120px]">
-            <span className="text-slate-300 whitespace-nowrap">{new Date(item.dateOfSale).toLocaleDateString()}</span>
-          </td>
-          <td className="py-4 px-6 w-40 min-w-[150px]">
-            <span className="text-blue-400 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerName || 'N/A'}>
-              {item.customerName || 'N/A'}
-            </span>
-          </td>
-          <td className="py-4 px-6 w-36 min-w-[140px]">
-            <span className="text-slate-300 whitespace-nowrap">{item.customerMobile || 'N/A'}</span>
-          </td>
-          <td className="py-4 px-6 w-48 min-w-[180px]">
-            <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerEmail || 'N/A'}>
-              {item.customerEmail || 'N/A'}
-            </span>
-          </td>
-          <td className="py-4 px-6 w-44 min-w-[160px]">
-            <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.soldByEmail || 'N/A'}>
-              {item.soldByEmail || 'N/A'}
-            </span>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+                            className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setSelectedSaleItem(item);
+                              setShowSaleDetailModal(true);
+                            }}
+                          >
+                            <td className="py-4 px-6 w-48 min-w-[200px]">
+                              <div className="font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis" title={item.productName}>
+                                {item.productName}
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 w-32 min-w-[120px]">
+                              <span className="text-cyan-400 font-mono text-sm whitespace-nowrap">{item.productId}</span>
+                            </td>
+                            <td className="py-4 px-6 w-28 min-w-[100px]">
+                              <span className="text-white whitespace-nowrap">{item.quantity} {item.unit}</span>
+                            </td>
+                            <td className="py-4 px-6 w-24 min-w-[90px]">
+                              <span className="text-slate-300 whitespace-nowrap">৳{item.pricePerUnit.toFixed(2)}</span>
+                            </td>
+                            <td className="py-4 px-6 w-28 min-w-[100px]">
+                              <span className="text-green-400 font-semibold whitespace-nowrap">৳{item.totalPrice.toFixed(2)}</span>
+                            </td>
+                            <td className="py-4 px-6 w-32 min-w-[120px]">
+                              <span className="text-slate-300 whitespace-nowrap">{new Date(item.dateOfSale).toLocaleDateString()}</span>
+                            </td>
+                            <td className="py-4 px-6 w-40 min-w-[150px]">
+                              <span className="text-blue-400 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerName || 'N/A'}>
+                                {item.customerName || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 w-36 min-w-[140px]">
+                              {item.warrantyEndDate ? (
+                                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                                  new Date(item.warrantyEndDate) > new Date()
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                                    : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                }`}>
+                                  {new Date(item.warrantyEndDate) > new Date() ? (
+                                    <>
+                                      <Shield className="w-3 h-3 mr-1" />
+                                      Available
+                                    </>
+                                  ) : (
+                                    <>
+                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                      Expired
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-500 text-xs">No warranty</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 w-36 min-w-[140px]">
+                              <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerMobile || 'N/A'}>
+                                {item.customerMobile || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 w-48 min-w-[180px]">
+                              <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerEmail || 'N/A'}>
+                                {item.customerEmail || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 w-48 min-w-[180px]">
+                              <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerAddress || 'N/A'}>
+                                {item.customerAddress || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 w-44 min-w-[160px]">
+                              <span className="text-orange-400 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.soldByEmail || 'N/A'}>
+                                {item.soldByEmail || 'N/A'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-
-                {/* Statistics */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                    <p className="text-slate-400 text-sm">Total Items</p>
-                    <p className="text-2xl font-bold text-white">
-                      {soldProducts.reduce((sum, item) => sum + item.quantity, 0)}
-                    </p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                    <p className="text-slate-400 text-sm">Total Revenue</p>
-                    <p className="text-2xl font-bold text-green-400">
-                      ৳{soldProducts.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                    <p className="text-slate-400 text-sm">Unique Products</p>
-                    <p className="text-2xl font-bold text-cyan-400">
-                      {new Set(soldProducts.map(item => item.productId)).size}
-                    </p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                    <p className="text-slate-400 text-sm">Avg. Sale Value</p>
-                    <p className="text-2xl font-bold text-purple-400">
-                      ৳{soldProducts.length > 0 ? (soldProducts.reduce((sum, item) => sum + item.totalPrice, 0) / soldProducts.length).toFixed(2) : '0.00'}
-                    </p>
+                  {/* Statistics */}
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                      <p className="text-slate-400 text-sm">Total Items</p>
+                      <p className="text-2xl font-bold text-white">
+                        {filteredSoldProducts.reduce((sum, item) => sum + item.quantity, 0)}
+                      </p>
+                    </div>
+                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                      <p className="text-slate-400 text-sm">Total Revenue</p>
+                      <p className="text-2xl font-bold text-green-400">
+                        ৳{filteredSoldProducts.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                      <p className="text-slate-400 text-sm">Unique Products</p>
+                      <p className="text-2xl font-bold text-cyan-400">
+                        {new Set(filteredSoldProducts.map(item => item.productId)).size}
+                      </p>
+                    </div>
+                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                      <p className="text-slate-400 text-sm">Avg. Sale Value</p>
+                      <p className="text-2xl font-bold text-purple-400">
+                        ৳{filteredSoldProducts.length > 0 ? (filteredSoldProducts.reduce((sum, item) => sum + item.totalPrice, 0) / filteredSoldProducts.length).toFixed(2) : '0.00'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
@@ -1394,6 +1524,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         )}
 
         {/* Categories Management */}
+
+        {/* Sale Detail Modal */}
+        <SaleDetailModal
+          isOpen={showSaleDetailModal}
+          onClose={() => {
+            setShowSaleDetailModal(false);
+            setSelectedSaleItem(null);
+          }}
+          saleItem={selectedSaleItem}
+          products={products}
+          onDownloadReceipt={(_saleItem) => {
+            // You can implement receipt generation here
+            alert('Receipt generation feature coming soon!');
+          }}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Shield, CheckCircle, XCircle, Calendar, Package, User, FileCheck } from 'lucide-react';
-import { searchWarrantyByProductId, approveWarrantyClaim, getWarrantyApprovals } from '../utils/storage';
+import { searchWarrantyByQuery, approveWarrantyClaim, getWarrantyApprovals, getProducts } from '../utils/storage';
+import SaleDetailModal from './SaleDetailModal';
 
 interface WarrantyItem {
   saleId: string;
@@ -38,15 +39,28 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<WarrantyItem[]>([]);
   const [approvals, setApprovals] = useState<WarrantyApproval[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedWarranty, setSelectedWarranty] = useState<WarrantyItem | null>(null);
+  const [selectedSaleForDetails, setSelectedSaleForDetails] = useState<WarrantyItem | null>(null);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showSaleDetailModal, setShowSaleDetailModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'approvals'>('search');
 
   useEffect(() => {
     loadApprovals();
+    loadProducts();
   }, []);
+
+  const loadProducts = async () => {
+    try {
+      const productsData = await getProducts();
+      setProducts(productsData);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+  };
 
   const loadApprovals = async () => {
     try {
@@ -64,7 +78,7 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
     
     setIsSearching(true);
     try {
-      const result = await searchWarrantyByProductId(searchQuery.trim());
+      const result = await searchWarrantyByQuery(searchQuery.trim());
       if (result.success && result.warranties) {
         setSearchResults(result.warranties);
       } else {
@@ -82,6 +96,11 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
     setSelectedWarranty(warranty);
     setApprovalNotes('');
     setShowApprovalModal(true);
+  };
+
+  const handleViewSaleDetails = (warranty: WarrantyItem) => {
+    setSelectedSaleForDetails(warranty);
+    setShowSaleDetailModal(true);
   };
 
   const confirmApproval = async () => {
@@ -184,7 +203,7 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Enter Product ID to search warranty..."
+                  placeholder="Enter Product ID, Customer Mobile Number, or Email Address..."
                   className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 backdrop-blur-sm"
                 />
               </div>
@@ -208,7 +227,8 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
                 {searchResults.map((warranty) => (
                   <div
                     key={warranty.saleId}
-                    className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/30 rounded-xl p-6 hover:bg-slate-800/50 transition-all duration-300"
+                    className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/30 rounded-xl p-6 hover:bg-slate-800/50 transition-all duration-300 cursor-pointer"
+                    onClick={() => handleViewSaleDetails(warranty)}
                   >
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       {/* Product Info */}
@@ -254,16 +274,32 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
                           </div>
                         </div>
 
-                        {/* Approve Button */}
-                        {warranty.warrantyStatus === 'active' && (
+                        {/* Action Buttons */}
+                        <div className="flex flex-col space-y-2">
                           <button
-                            onClick={() => handleApproveWarranty(warranty)}
-                            className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-400 border border-green-500/30 rounded-lg transition-all duration-300 hover:scale-[1.02]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewSaleDetails(warranty);
+                            }}
+                            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-400 border border-blue-500/30 rounded-lg transition-all duration-300 hover:scale-[1.02]"
                           >
-                            <CheckCircle className="w-4 h-4" />
-                            <span>Approve Warranty Claim</span>
+                            <Package className="w-4 h-4" />
+                            <span>View Sale Details</span>
                           </button>
-                        )}
+                          
+                          {warranty.warrantyStatus === 'active' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApproveWarranty(warranty);
+                              }}
+                              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-400 border border-green-500/30 rounded-lg transition-all duration-300 hover:scale-[1.02]"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Approve Warranty Claim</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -277,7 +313,8 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
             <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-12 text-center shadow-lg shadow-cyan-500/10">
               <Search className="w-16 h-16 text-slate-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">No Warranty Found</h3>
-              <p className="text-slate-400">No warranty information found for Product ID: {searchQuery}</p>
+              <p className="text-slate-400">No warranty information found for: {searchQuery}</p>
+              <p className="text-slate-500 text-sm mt-2">Try searching with Product ID, Customer Mobile Number, or Email Address</p>
             </div>
           )}
         </>
@@ -399,6 +436,35 @@ const WarrantyManagement: React.FC<WarrantyManagementProps> = ({ user }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Sale Detail Modal */}
+      {selectedSaleForDetails && (
+        <SaleDetailModal
+          isOpen={showSaleDetailModal}
+          onClose={() => {
+            setShowSaleDetailModal(false);
+            setSelectedSaleForDetails(null);
+          }}
+          saleItem={{
+            saleId: selectedSaleForDetails.saleId,
+            productId: selectedSaleForDetails.productId,
+            productName: selectedSaleForDetails.productName,
+            quantity: selectedSaleForDetails.quantity,
+            pricePerUnit: selectedSaleForDetails.pricePerUnit,
+            totalPrice: selectedSaleForDetails.totalPrice,
+            unit: 'pcs', // Default unit if not available
+            dateOfSale: selectedSaleForDetails.dateOfSale,
+            customerName: selectedSaleForDetails.customerId, // Using customerId as name fallback
+            customerEmail: selectedSaleForDetails.customerEmail,
+            customerMobile: '', // Will be populated from search query if mobile was used
+            customerAddress: '', // Will be populated if available
+            soldByEmail: '', // Will be populated if available
+            warrantyEndDate: selectedSaleForDetails.warrantyEndDate,
+            timestamp: selectedSaleForDetails.timestamp
+          }}
+          products={products}
+        />
       )}
     </div>
   );

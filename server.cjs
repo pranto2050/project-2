@@ -476,26 +476,34 @@ app.post('/api/sales-with-warranty', async (req, res) => {
   }
 });
 
-// Search warranty by product ID
-app.get('/api/warranty/search/:productId', async (req, res) => {
+// Search warranty by multiple criteria (product ID, customer mobile, or customer email)
+app.get('/api/warranty/search/:searchQuery', async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { searchQuery } = req.params;
     const salesFiles = await fs.readdir(SALES_DIR);
-    const salesWithProduct = [];
+    const matchingSales = [];
     
     // Search through all daily sales files
     for (const file of salesFiles) {
       if (file.endsWith('.json')) {
         const filePath = path.join(SALES_DIR, file);
         const dailySales = await readJsonFile(filePath);
-        const matchingSales = dailySales.filter(sale => sale.productId === productId);
-        salesWithProduct.push(...matchingSales);
+        
+        // Filter by product ID, customer mobile, or customer email
+        const filtered = dailySales.filter(sale => 
+          sale.productId === searchQuery ||
+          sale.customerMobile === searchQuery ||
+          sale.customerEmail === searchQuery ||
+          sale.customerEmail?.toLowerCase() === searchQuery.toLowerCase()
+        );
+        
+        matchingSales.push(...filtered);
       }
     }
     
     // Calculate warranty status for each sale
     const today = new Date();
-    const warrantyInfo = salesWithProduct.map(sale => {
+    const warrantyInfo = matchingSales.map(sale => {
       const warrantyEndDate = new Date(sale.warrantyEndDate);
       const isWarrantyActive = today <= warrantyEndDate;
       
@@ -595,8 +603,10 @@ app.get('/api/soldproducts', async (req, res) => {
       customerName: sale.customerName,
       customerEmail: sale.customerEmail,
       customerMobile: sale.customerMobile,
+      customerAddress: sale.customerAddress,
       soldByEmail: sale.soldByEmail,
       soldBy: sale.soldBy,
+      warrantyEndDate: sale.warrantyEndDate,
       timestamp: sale.timestamp
     }));
     res.json({ success: true, soldProducts });

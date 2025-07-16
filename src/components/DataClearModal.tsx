@@ -114,7 +114,7 @@ const DataClearModal: React.FC<DataClearModalProps> = ({
 
           <div className="space-y-4">
             <div>
-              <label className="block text-slate-400 text-sm mb-2 flex items-center">
+              <label className="text-slate-400 text-sm mb-2 flex items-center">
                 <Shield className="w-4 h-4 mr-2" />
                 Enter Admin Password to Confirm
               </label>
