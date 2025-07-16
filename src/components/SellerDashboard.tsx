@@ -435,7 +435,9 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (selectedCategory === '' || product.category === selectedCategory) &&
-    (selectedProductType === '' || product.name.toLowerCase().includes(selectedProductType.toLowerCase())) &&
+    (selectedProductType === '' || 
+     product.name.toLowerCase().includes(selectedProductType.toLowerCase()) ||
+     (product.networkItem && product.networkItem.toLowerCase().includes(selectedProductType.toLowerCase()))) &&
     (selectedBrand === '' || (product.brand && product.brand.toLowerCase().includes(selectedBrand.toLowerCase())))
   ).sort((a, b) => {
     let aValue = a[sortBy as keyof Product];

@@ -499,7 +499,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const filteredProducts = products
     .filter(product =>
       (!selectedCategory || product.category === selectedCategory) &&
-      (!selectedSubcategory || product.subcategory === selectedSubcategory) &&
+      (!selectedSubcategory || product.subcategory === selectedSubcategory || product.networkItem === selectedSubcategory) &&
       (!selectedBrand || product.brand === selectedBrand) &&
       (!selectedModel || product.model === selectedModel) &&
       (searchTerm.trim() === '' || 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, Package, Trash2, Plus, Minus, LogOut, ShoppingBag } from 'lucide-react';
 import { getCurrentUser, logout, updateUser, validateUserSession } from '../utils/auth';
 import { getProducts, searchProducts, updateStock, logSale } from '../utils/storage';
-import { Product, CartItem, User as UserType, SaleRecord, SaleItem } from '../types';
+import { Product, CartItem, User as UserType, SaleRecord, SaleItem, CustomerDetails } from '../types';
 import ProductCard from './ProductCard';
 import SalesModal from './SalesModal';
 import QuantityModal from './QuantityModal';
@@ -157,7 +157,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     setSalesItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }) => {
+  const completeSale = async (_customDateTime?: string, _warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, _customerDetails?: CustomerDetails) => {
     if (!user || salesItems.length === 0) return;
     const receiptNumber = `RCP${Date.now()}`;
     setLastReceiptNumber(receiptNumber);
@@ -297,7 +297,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
 
   const filteredProducts = products.filter(p =>
     (!selectedCategory || p.category === selectedCategory) &&
-    (!selectedSubcategory || p.subcategory === selectedSubcategory) &&
+    (!selectedSubcategory || p.subcategory === selectedSubcategory || p.networkItem === selectedSubcategory) &&
     (!selectedBrand || p.brand === selectedBrand) &&
     (!selectedModel || p.model === selectedModel)
   );

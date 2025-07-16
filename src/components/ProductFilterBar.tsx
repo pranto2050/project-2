@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Layers, List, Tag, Barcode, Search, Filter, SortAsc, X } from "lucide-react";
 import { Product } from "../types";
 
@@ -37,7 +37,7 @@ export default function ProductFilterBar({
     [products]
   );
   const subcategoryOptions = useMemo(
-    () => [...new Set(products.filter(p => !selectedCategory || p.category === selectedCategory).map(p => p.subcategory).filter(Boolean))],
+    () => [...new Set(products.filter(p => !selectedCategory || p.category === selectedCategory).map(p => p.networkItem || p.subcategory).filter(Boolean))],
     [products, selectedCategory]
   );
   const brandOptions = useMemo(
@@ -122,6 +122,17 @@ export default function ProductFilterBar({
               className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm text-sm"
             >
               <option value="" className="bg-slate-800">All Subcategories</option>
+              {/* Network Items */}
+              <option value="Router" className="bg-slate-800">Router</option>
+              <option value="Switch" className="bg-slate-800">Switch</option>
+              <option value="ONU" className="bg-slate-800">ONU</option>
+              <option value="Access Point" className="bg-slate-800">Access Point</option>
+              <option value="Modem" className="bg-slate-800">Modem</option>
+              <option value="Network Card" className="bg-slate-800">Network Card</option>
+              <option value="Cable" className="bg-slate-800">Network Cable</option>
+              <option value="Fiber Optic" className="bg-slate-800">Fiber Optic</option>
+              <option value="Patch Panel" className="bg-slate-800">Patch Panel</option>
+              <option value="Network Adapter" className="bg-slate-800">Network Adapter</option>
               {subcategoryOptions.map(sub => (
                 <option key={sub} value={sub} className="bg-slate-800">{sub}</option>
               ))}

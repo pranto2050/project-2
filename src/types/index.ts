@@ -21,6 +21,7 @@ export interface Product {
   unit: string;
   category: string;
   subcategory?: string; // Added for filtering
+  networkItem?: string; // Network item type for network products
   model?: string; // Added for filtering
   rating: number;
   image: string;
