@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Shield, Eye, EyeOff, Edit3, Save, Users, Crown, Briefcase, User as UserIcon, Lock, Mail, Phone, MapPin, Calendar, Key } from 'lucide-react';
-import { getAllUsers, updateUser, getCurrentUser } from '../utils/auth';
+import { X, User, Shield, Eye, EyeOff, Edit3, Save, Users, Crown, Briefcase, User as UserIcon, Lock, Calendar, Key } from 'lucide-react';
+import { getAllUsers, updateUser } from '../utils/auth';
 import { User as UserType } from '../types';
 import { apiService } from '../utils/apiService';
 

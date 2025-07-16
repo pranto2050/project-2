@@ -9,7 +9,6 @@ import {
   addCategory,
   deleteCategory,
   updateStock,
-  logSale,
   logPurchase,
   logReturn,
   getSalesLogs,
@@ -86,7 +85,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [completedSaleItems, setCompletedSaleItems] = useState<SaleItem[]>([]);
   const [notification, setNotification] = useState<string>('');
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
-  const [soldProducts, setSoldProducts] = useState<any[]>([]);
+  const [soldProducts, setSoldProducts] = useState<Array<{
+    saleId: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+    pricePerUnit: number;
+    totalPrice: number;
+    unit: string;
+    dateOfSale: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerMobile?: string;
+    soldByEmail?: string;
+  }>>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [todaysSalesData, setTodaysSalesData] = useState<DailySales>({
@@ -96,7 +108,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     totalItems: 0
   });
   const [loading, setLoading] = useState(false);
-  const [brands, setBrands] = useState<any[]>([]);
+  const [brands, setBrands] = useState<Array<{
+    id: string;
+    name: string;
+    description?: string;
+  }>>([]);
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
@@ -104,7 +120,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   useEffect(() => {
     loadData();
     loadBrands();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadData = async () => {
     setLoading(true);
@@ -139,8 +155,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       const brandsData = await getBrands();
       // Deduplicate by name
       const uniqueBrands = Array.from(new Set(brandsData.map(b => b.name))).map(name => brandsData.find(b => b.name === name));
-      setBrands(uniqueBrands);
-    } catch (error) {
+      setBrands(uniqueBrands.filter(Boolean));
+    } catch {
       setBrands([]);
     }
   };
@@ -306,8 +322,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         const saleData = {
           productId: item.product.id,
           productName: item.product.name,
-          customerId: user.id,
-          customerEmail: user.email,
+          customerId: `customer-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          customerEmail: customerDetails?.email || '',
+          customerName: customerDetails?.name || '',
+          customerMobile: customerDetails?.mobile || '',
+          customerAddress: customerDetails?.address || '',
           quantity: item.quantity,
           pricePerUnit: item.product.pricePerUnit,
           totalPrice: item.totalPrice,
@@ -321,9 +340,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             return endDate.toISOString().split('T')[0];
           })(),
           timestamp: customDateTime || new Date().toISOString(),
-          // Add customer details if provided
-          customerMobile: customerDetails?.mobile,
-          customerAddress: customerDetails?.address
+          soldBy: user.id,
+          soldByEmail: user.email
         };
 
         // Save sale with warranty information using the new API
@@ -338,29 +356,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         if (!result.ok) {
           throw new Error('Failed to save sale with warranty');
         }
-
-        // Also log to the old sales system for backward compatibility
-        const sale: SaleRecord = {
-          productID: item.product.id,
-          productName: item.product.name,
-          quantitySold: item.quantity,
-          pricePerUnit: item.product.pricePerUnit,
-          totalPrice: item.totalPrice,
-          unit: item.product.unit,
-          timestamp: customDateTime || new Date().toISOString(),
-          userId: user.id,
-          userEmail: user.email,
-          commonId: item.product.commonId,
-          uniqueId: item.product.uniqueId,
-          // Add customer details if provided
-          customer: customerDetails ? {
-            name: customerDetails.name,
-            mobile: customerDetails.mobile,
-            email: customerDetails.email,
-            address: customerDetails.address
-          } : undefined
-        };
-        await logSale(sale);
       }
 
       setCompletedSaleItems(itemsForReceipt);
@@ -992,56 +987,80 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                     </p>
                   </div>
                 </div>
-
+{/* Table Design */}
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[1400px]">
                     <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Product</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">ID</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Quantity</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Price</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Total</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Sale Date</th>
-                        <th className="text-left text-slate-400 font-medium py-3 px-4">Sold By</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {soldProducts.map((item) => (
-                        <tr key={item.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                          <td className="py-4 px-4">
-                            <div className="font-medium text-white">{item.productName}</div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-cyan-400 font-mono text-sm">{item.productID}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-white">{item.quantitySold} {item.unit}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-slate-300">৳{item.pricePerUnit.toFixed(2)}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-green-400 font-semibold">৳{item.totalPrice.toFixed(2)}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-slate-300">{new Date(item.saleDate).toLocaleDateString()}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-blue-400">{item.userEmail}</span>
-                          </td>
+                       <tr className="border-b border-slate-700">
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-48 min-w-[200px]">Product</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">ID</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Quantity</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-24 min-w-[90px]">Price</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Total</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">Sale Date</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-40 min-w-[150px]">Customer Name</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-36 min-w-[140px]">Customer Mobile</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-48 min-w-[180px]">Customer Email</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-44 min-w-[160px]">Sold By</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {soldProducts.map((item) => (
+                          <tr
+                            key={item.saleId}
+                              className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                            >
+          <td className="py-4 px-6 w-48 min-w-[200px]">
+            <div className="font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis" title={item.productName}>
+              {item.productName}
+            </div>
+          </td>
+          <td className="py-4 px-6 w-32 min-w-[120px]">
+            <span className="text-cyan-400 font-mono text-sm whitespace-nowrap">{item.productId}</span>
+          </td>
+          <td className="py-4 px-6 w-28 min-w-[100px]">
+            <span className="text-white whitespace-nowrap">{item.quantity} {item.unit}</span>
+          </td>
+          <td className="py-4 px-6 w-24 min-w-[90px]">
+            <span className="text-slate-300 whitespace-nowrap">৳{item.pricePerUnit.toFixed(2)}</span>
+          </td>
+          <td className="py-4 px-6 w-28 min-w-[100px]">
+            <span className="text-green-400 font-semibold whitespace-nowrap">৳{item.totalPrice.toFixed(2)}</span>
+          </td>
+          <td className="py-4 px-6 w-32 min-w-[120px]">
+            <span className="text-slate-300 whitespace-nowrap">{new Date(item.dateOfSale).toLocaleDateString()}</span>
+          </td>
+          <td className="py-4 px-6 w-40 min-w-[150px]">
+            <span className="text-blue-400 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerName || 'N/A'}>
+              {item.customerName || 'N/A'}
+            </span>
+          </td>
+          <td className="py-4 px-6 w-36 min-w-[140px]">
+            <span className="text-slate-300 whitespace-nowrap">{item.customerMobile || 'N/A'}</span>
+          </td>
+          <td className="py-4 px-6 w-48 min-w-[180px]">
+            <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerEmail || 'N/A'}>
+              {item.customerEmail || 'N/A'}
+            </span>
+          </td>
+          <td className="py-4 px-6 w-44 min-w-[160px]">
+            <span className="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.soldByEmail || 'N/A'}>
+              {item.soldByEmail || 'N/A'}
+            </span>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
 
                 {/* Statistics */}
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-slate-800/30 rounded-xl p-4 text-center">
                     <p className="text-slate-400 text-sm">Total Items</p>
                     <p className="text-2xl font-bold text-white">
-                      {soldProducts.reduce((sum, item) => sum + item.quantitySold, 0)}
+                      {soldProducts.reduce((sum, item) => sum + item.quantity, 0)}
                     </p>
                   </div>
                   <div className="bg-slate-800/30 rounded-xl p-4 text-center">
@@ -1053,7 +1072,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <div className="bg-slate-800/30 rounded-xl p-4 text-center">
                     <p className="text-slate-400 text-sm">Unique Products</p>
                     <p className="text-2xl font-bold text-cyan-400">
-                      {new Set(soldProducts.map(item => item.productID)).size}
+                      {new Set(soldProducts.map(item => item.productId)).size}
                     </p>
                   </div>
                   <div className="bg-slate-800/30 rounded-xl p-4 text-center">

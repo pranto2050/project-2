@@ -1,251 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Filter, Calendar, DollarSign, Package, User, Shield, Fingerprint, Download, Phone } from 'lucide-react';
-import { SaleRecord } from '../types';
+import React, { useState } from 'react';
+import { Search, ChevronLeft, ChevronRight, Package, Download, FileText, BarChart3 } from 'lucide-react';
 
-interface SoldProductsProps {
-  sales: SaleRecord[];
+interface UnifiedSaleItem {
+  saleId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  pricePerUnit: number;
+  dateOfSale: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerMobile?: string;
+  customerAddress?: string;
+  soldBy?: string;
+  soldByEmail?: string;
+  warranty?: {
+    startDate: string;
+    endDate: string;
+    warrantyPeriod: string;
+  };
 }
 
-// Interface for flattened sale items (individual products from bulk sales)
-interface FlattenedSaleItem {
-  saleId: string;
-  productID: string;
-  productName: string;
-  quantitySold: number;
-  pricePerUnit: number;
-  totalPrice: number;
-  unit: string;
-  timestamp: string;
-  userId: string;
-  userEmail: string;
-  commonId: string;
-  uniqueId: string;
-  customerMobile?: string;
-  customerEmail?: string;
-  customerAddress?: string;
-  // Individual item details
-  itemIndex: number;
-  individualPrice: number;
-  individualQuantity: number;
+interface SoldProductsProps {
+  sales: UnifiedSaleItem[];
 }
 
 const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterBy, setFilterBy] = useState<'all' | 'uniqueId' | 'commonId' | 'productName' | 'mobileNumber'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'productName'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [showDateFilter, setShowDateFilter] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState<{ mobile: string; email: string; address: string } | null>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [selectedSeller, setSelectedSeller] = useState('all');
 
-  // Flatten sales data to show individual products from bulk sales
-  const flattenSales = (salesData: SaleRecord[]): FlattenedSaleItem[] => {
-    const flattened: FlattenedSaleItem[] = [];
-    
-    salesData.forEach(sale => {
-      // If it's a bulk sale with multiple items, create individual entries
-      if (sale.quantitySold > 1) {
-        for (let i = 0; i < sale.quantitySold; i++) {
-          flattened.push({
-            ...sale,
-            itemIndex: i + 1,
-            individualPrice: sale.pricePerUnit,
-            individualQuantity: 1,
-            totalPrice: sale.pricePerUnit, // Individual item price
-            customerMobile: sale.customer?.mobile,
-            customerEmail: sale.customer?.email,
-            customerAddress: sale.customer?.address,
-          });
-        }
-      } else {
-        // Single item sale
-        flattened.push({
-          ...sale,
-          itemIndex: 1,
-          individualPrice: sale.pricePerUnit,
-          individualQuantity: sale.quantitySold,
-          customerMobile: sale.customer?.mobile,
-          customerEmail: sale.customer?.email,
-          customerAddress: sale.customer?.address,
-        });
+  // Process sales data according to design specs - show each sale as one row (no quantity expansion)
+  const processedSales = sales.map((sale, index) => ({
+    ...sale,
+    rowNumber: index + 1,
+    totalPrice: sale.quantity * sale.pricePerUnit
+  }));
+
+  // Get unique sellers for filter dropdown
+  const uniqueSellers = Array.from(new Set(sales.map(sale => sale.soldByEmail).filter(Boolean)));
+
+  // Filter sales based on search and filter criteria
+  const getFilteredSales = () => {
+    return processedSales.filter(sale => {
+      // Text search filter (product name only)
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = sale.productName?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
       }
+
+      // Date range filter
+      if (startDate || endDate) {
+        const saleDate = new Date(sale.dateOfSale);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+
+        if (start && end) {
+          if (saleDate < start || saleDate > end) return false;
+        } else if (start) {
+          if (saleDate < start) return false;
+        } else if (end) {
+          if (saleDate > end) return false;
+        }
+      }
+
+      // Seller filter
+      if (selectedSeller !== 'all' && sale.soldByEmail !== selectedSeller) {
+        return false;
+      }
+
+      return true;
     });
-    
-    return flattened;
-  };
-
-  // Search by mobile number using API
-  const searchByMobileNumber = async (mobileNumber: string): Promise<FlattenedSaleItem[]> => {
-    setIsSearching(true);
-    setSearchError(null);
-    setCustomerInfo(null);
-    
-    try {
-      const response = await fetch(`http://localhost:3001/api/warranty/search?type=mobileNumber&value=${encodeURIComponent(mobileNumber.trim())}&page=1&limit=100`);
-      const data = await response.json();
-      
-      if (data.success && data.data) {
-        // Transform API response to match our FlattenedSaleItem interface
-        const transformedResults = data.data.map((item: any, index: number) => ({
-          saleId: item.saleId,
-          productID: item.commonId || item.uniqueId || 'N/A',
-          productName: item.productName,
-          quantitySold: item.quantity,
-          pricePerUnit: item.salePrice / item.quantity,
-          totalPrice: item.salePrice / item.quantity, // Individual item price
-          unit: item.unit || 'piece',
-          timestamp: item.purchaseDate,
-          userId: item.customerId,
-          userEmail: item.customerEmail,
-          commonId: item.commonId,
-          uniqueId: item.uniqueId,
-          customerMobile: item.customerMobile,
-          customerEmail: item.customerEmail,
-          customerAddress: item.customerAddress,
-          itemIndex: index + 1,
-          individualPrice: item.salePrice / item.quantity,
-          individualQuantity: 1,
-        }));
-        
-        // Set customer info if available
-        if (transformedResults.length > 0) {
-          const firstResult = transformedResults[0];
-          setCustomerInfo({
-            mobile: firstResult.customerMobile || 'N/A',
-            email: firstResult.customerEmail || 'N/A',
-            address: firstResult.customerAddress || 'N/A'
-          });
-        }
-        
-        return transformedResults;
-      }
-      return [];
-    } catch (error) {
-      console.error('Error searching by mobile number:', error);
-      setSearchError('Failed to search by mobile number. Please try again.');
-      return [];
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // State for sales data
-  const [salesData, setSalesData] = useState<FlattenedSaleItem[]>([]);
-  const [apiSearchResults, setApiSearchResults] = useState<FlattenedSaleItem[]>([]);
-
-  // Load initial sales data
-  useEffect(() => {
-    const flattenedData = flattenSales(sales);
-    setSalesData(flattenedData);
-  }, [sales]);
-
-  // Handle search based on filter type
-  useEffect(() => {
-    const performSearch = async () => {
-      if (filterBy === 'mobileNumber' && searchTerm.trim()) {
-        // Use API search for mobile number
-        const results = await searchByMobileNumber(searchTerm);
-        setApiSearchResults(results);
-      } else {
-        // Clear API results for local searches
-        setApiSearchResults([]);
-        setCustomerInfo(null);
-        setSearchError(null);
-      }
-    };
-
-    // Debounce the search
-    const timeoutId = setTimeout(performSearch, 300);
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterBy]);
-
-  // Filter and sort sales data
-  const getFilteredSales = (): FlattenedSaleItem[] => {
-    let dataToFilter: FlattenedSaleItem[] = [];
-    
-    // Use API results for mobile search, otherwise use local data
-    if (filterBy === 'mobileNumber' && searchTerm.trim()) {
-      dataToFilter = apiSearchResults;
-    } else {
-      dataToFilter = salesData;
-    }
-
-    return dataToFilter
-      .filter(sale => {
-        // Text search filter
-        if (searchTerm && filterBy !== 'mobileNumber') {
-          const searchLower = searchTerm.toLowerCase().trim();
-          
-          switch (filterBy) {
-            case 'uniqueId':
-              return sale.uniqueId?.toLowerCase().includes(searchLower) || false;
-            case 'commonId':
-              return sale.commonId?.toLowerCase().includes(searchLower) || false;
-            case 'productName':
-              return sale.productName.toLowerCase().includes(searchLower);
-            case 'all':
-              return (
-                sale.uniqueId?.toLowerCase().includes(searchLower) ||
-                sale.commonId?.toLowerCase().includes(searchLower) ||
-                sale.productName.toLowerCase().includes(searchLower) ||
-                sale.userEmail.toLowerCase().includes(searchLower) ||
-                sale.customerMobile?.toLowerCase().includes(searchLower) ||
-                false
-              );
-            default:
-              return true;
-          }
-        }
-
-        // Date range filter
-        if (startDate || endDate) {
-          const saleDate = new Date(sale.timestamp);
-          const start = startDate ? new Date(startDate) : null;
-          const end = endDate ? new Date(endDate) : null;
-
-          if (start && end) {
-            return saleDate >= start && saleDate <= end;
-          } else if (start) {
-            return saleDate >= start;
-          } else if (end) {
-            return saleDate <= end;
-          }
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        let aValue: any, bValue: any;
-        
-        switch (sortBy) {
-          case 'date':
-            aValue = new Date(a.timestamp);
-            bValue = new Date(b.timestamp);
-            break;
-          case 'amount':
-            aValue = a.totalPrice;
-            bValue = b.totalPrice;
-            break;
-          case 'productName':
-            aValue = a.productName.toLowerCase();
-            bValue = b.productName.toLowerCase();
-            break;
-          default:
-            aValue = new Date(a.timestamp);
-            bValue = new Date(b.timestamp);
-        }
-        
-        if (sortOrder === 'asc') {
-          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-        } else {
-          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-        }
-      });
   };
 
   const filteredSales = getFilteredSales();
@@ -256,15 +85,18 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
   const endIndex = startIndex + itemsPerPage;
   const currentSales = filteredSales.slice(startIndex, endIndex);
 
-  // Calculate totals
-  const totalAmount = filteredSales.reduce((sum, sale) => sum + sale.totalPrice, 0);
-  const totalItems = filteredSales.length; // Count individual items
+  // Calculate summary statistics
+  const totalSales = filteredSales.length;
+  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalPrice, 0);
+  const totalProducts = filteredSales.reduce((sum, sale) => sum + sale.quantity, 0);
+  const uniqueProducts = new Set(filteredSales.map(sale => sale.productId)).size;
 
+  // Format functions
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
+      year: 'numeric'
     });
   };
 
@@ -272,6 +104,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
     return `৳${amount.toLocaleString()}`;
   };
 
+  // Get page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -307,19 +140,17 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
     return pages;
   };
 
+  // Export to CSV
   const handleExportData = () => {
     const csvContent = [
-      ['Unique ID', 'Product Name', 'Common ID', 'Quantity', 'Rate (৳)', 'Amount (৳)', 'Sale Date', 'Customer', 'Mobile Number'],
-      ...filteredSales.map(sale => [
-        sale.uniqueId || 'N/A',
-        sale.productName,
-        sale.commonId || 'N/A',
-        sale.individualQuantity,
-        sale.individualPrice.toString(),
-        sale.totalPrice.toString(),
-        formatDate(sale.timestamp),
-        sale.userEmail,
-        sale.customerMobile || 'N/A'
+      ['#', 'Product Name', 'Qty', 'Unit Price', 'Sale Date', 'Seller Email'],
+      ...filteredSales.map((sale, index) => [
+        (index + 1).toString(),
+        sale.productName || 'N/A',
+        sale.quantity.toString(),
+        sale.pricePerUnit.toString(),
+        formatDate(sale.dateOfSale),
+        sale.soldByEmail || 'N/A'
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -332,433 +163,297 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
     window.URL.revokeObjectURL(url);
   };
 
+  // Clear all filters
   const clearFilters = () => {
     setSearchTerm('');
-    setFilterBy('all');
     setStartDate('');
     setEndDate('');
+    setSelectedSeller('all');
     setCurrentPage(1);
-    setCustomerInfo(null);
-    setSearchError(null);
-    setApiSearchResults([]);
-  };
-
-  const validateMobileNumber = (mobile: string): boolean => {
-    return /^[0-9+\-\s()]{10,15}$/.test(mobile.trim());
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page Header */}
       <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 shadow-lg shadow-cyan-500/10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Package className="w-6 h-6 text-slate-900" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Sold Products</h2>
-              <p className="text-slate-400">View all sold products with detailed information</p>
-            </div>
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <Package className="w-6 h-6 text-white" />
           </div>
-          
-          {/* Summary Stats */}
-          <div className="flex space-x-4">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">Total Items</p>
-              <p className="text-green-400 font-bold text-lg">{filteredSales.length}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">Total Revenue</p>
-              <p className="text-emerald-400 font-bold text-lg">{formatCurrency(totalAmount)}</p>
-            </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">📦 Sold Products</h2>
+            <p className="text-slate-400">View all successfully completed sales transactions</p>
           </div>
         </div>
+      </div>
 
-        {/* Error Message */}
-        {searchError && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <span className="text-red-400 text-sm">⚠️ {searchError}</span>
-              <button
-                onClick={() => setSearchError(null)}
-                className="text-red-400 hover:text-red-300 text-sm underline"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Customer Information Header */}
-        {customerInfo && filterBy === 'mobileNumber' && (
-          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <div className="flex items-center space-x-3 mb-3">
-              <User className="w-5 h-5 text-blue-400" />
-              <span className="text-blue-400 font-medium text-lg">Customer Information</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-slate-400">Mobile Number:</p>
-                <p className="text-white font-medium">{customerInfo.mobile}</p>
-              </div>
-              <div>
-                <p className="text-slate-400">Email Address:</p>
-                <p className="text-white font-medium">{customerInfo.email}</p>
-              </div>
-              <div>
-                <p className="text-slate-400">Address:</p>
-                <p className="text-white font-medium">{customerInfo.address}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search and Filter Controls */}
+      {/* Search & Filter Section */}
+      <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 shadow-lg shadow-cyan-500/10">
+        <div className="flex items-center space-x-3 mb-4">
+          <Search className="w-5 h-5 text-cyan-400" />
+          <h3 className="text-lg font-semibold text-white">🔍 Search & Filter</h3>
+        </div>
+        
         <div className="space-y-4">
-          {/* Primary Search Row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
+          {/* Search Bar */}
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Search by Product Name:</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder={
-                  filterBy === 'mobileNumber' 
-                    ? 'Enter mobile number (e.g., 017XXXXXXXX)' 
-                    : filterBy === 'uniqueId'
-                    ? 'Enter Unique ID (e.g., CAM-1001-0003)'
-                    : filterBy === 'commonId'
-                    ? 'Enter Common ID (e.g., CAM-1001)'
-                    : filterBy === 'productName'
-                    ? 'Enter product name'
-                    : 'Search sold products...'
-                }
+                placeholder="Enter product name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
             </div>
-
-            {/* Filter By */}
-            <select
-              value={filterBy}
-              onChange={(e) => {
-                setFilterBy(e.target.value as any);
-                setSearchTerm('');
-                setCustomerInfo(null);
-                setSearchError(null);
-                setApiSearchResults([]);
-              }}
-              className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-            >
-              <option value="all" className="bg-slate-800">All Fields</option>
-              <option value="uniqueId" className="bg-slate-800">Unique ID</option>
-              <option value="commonId" className="bg-slate-800">Common ID</option>
-              <option value="productName" className="bg-slate-800">Product Name</option>
-              <option value="mobileNumber" className="bg-slate-800">Mobile Number</option>
-            </select>
-
-            {/* Sort By */}
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [field, order] = e.target.value.split('-');
-                setSortBy(field as any);
-                setSortOrder(order as 'asc' | 'desc');
-              }}
-              className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-            >
-              <option value="date-desc" className="bg-slate-800">Date (Newest)</option>
-              <option value="date-asc" className="bg-slate-800">Date (Oldest)</option>
-              <option value="amount-desc" className="bg-slate-800">Amount (High-Low)</option>
-              <option value="amount-asc" className="bg-slate-800">Amount (Low-High)</option>
-              <option value="productName-asc" className="bg-slate-800">Product Name A-Z</option>
-              <option value="productName-desc" className="bg-slate-800">Product Name Z-A</option>
-            </select>
-
-            {/* Items Per Page */}
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-            >
-              <option value={10} className="bg-slate-800">10 per page</option>
-              <option value={20} className="bg-slate-800">20 per page</option>
-              <option value={50} className="bg-slate-800">50 per page</option>
-            </select>
           </div>
 
-          {/* Secondary Controls Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowDateFilter(!showDateFilter)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                  showDateFilter 
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                    : 'bg-white/10 text-slate-400 border border-white/20 hover:bg-white/20'
-                }`}
+          {/* Date Range and Seller Filter */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-slate-400 text-sm mb-2">Filter by Date Range - From:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 text-sm mb-2">To:</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 text-sm mb-2">Filter by Seller:</label>
+              <select
+                value={selectedSeller}
+                onChange={(e) => setSelectedSeller(e.target.value)}
+                className="w-full px-3 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <Calendar className="w-4 h-4" />
-                <span>Date Filter</span>
-              </button>
-
-              {(searchTerm || startDate || endDate) && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg transition-all duration-300"
-                >
-                  <Filter className="w-4 h-4" />
-                  <span>Clear Filters</span>
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={handleExportData}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 rounded-lg transition-all duration-300"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-          </div>
-
-          {/* Date Range Filter */}
-          {showDateFilter && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Start Date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  className="w-full px-4 py-2 bg-slate-600/20 hover:bg-slate-600/30 text-slate-400 border border-slate-500/30 rounded-lg transition-all duration-300"
-                >
-                  Clear Dates
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sales Table */}
-      <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl shadow-lg shadow-cyan-500/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-800/50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Fingerprint className="w-4 h-4" />
-                    <span>Unique ID</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Package className="w-4 h-4" />
-                    <span>Product Name</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Filter className="w-4 h-4" />
-                    <span>Common ID</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Package className="w-4 h-4" />
-                    <span>Qty</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4" />
-                    <span>Rate (৳)</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4" />
-                    <span>Amount (৳)</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Sale Date</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>Customer</span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/30">
-              {currentSales.map((sale, index) => (
-                <tr 
-                  key={`${sale.saleId}-${sale.itemIndex}-${index}`}
-                  className="hover:bg-white/5 transition-colors duration-200"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono text-cyan-400">
-                      {sale.uniqueId || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">
-                      {sale.productName}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      ID: {sale.productID}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono text-blue-400">
-                      {sale.commonId || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">
-                      {sale.individualQuantity} {sale.unit}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-300">
-                      {formatCurrency(sale.individualPrice)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-green-400">
-                      {formatCurrency(sale.totalPrice)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">
-                      {formatDate(sale.timestamp)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">
-                      {sale.userEmail}
-                    </div>
-                    {sale.customerMobile && (
-                      <div className="text-xs text-slate-400">
-                        📱 {sale.customerMobile}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-slate-800/30 px-6 py-4 border-t border-slate-700/30">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-400">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredSales.length)} of {filteredSales.length} items
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-slate-700/50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                {getPageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                    disabled={page === '...'}
-                    className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                      page === currentPage
-                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                        : page === '...'
-                        ? 'text-slate-400 cursor-default'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
-                  >
-                    {page}
-                  </button>
+                <option value="all">All Sellers ▼</option>
+                {uniqueSellers.map(seller => (
+                  <option key={seller} value={seller}>{seller}</option>
                 ))}
-                
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-slate-700/50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              </select>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* No Results */}
-      {filteredSales.length === 0 && !isSearching && (
-        <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-12 text-center shadow-lg shadow-cyan-500/10">
-          <Package className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">No Products Found</h3>
-          <p className="text-slate-400">
-            {searchTerm || startDate || endDate
-              ? `No sold products match your search criteria "${searchTerm}".`
-              : 'No sales have been recorded yet.'
-            }
-          </p>
-          {(searchTerm || startDate || endDate) && (
+          {/* Action Buttons */}
+          <div className="flex justify-end">
             <button
               onClick={clearFilters}
-              className="mt-4 px-6 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 rounded-lg transition-all duration-300"
+              className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
             >
-              Clear Search
+              Apply Filter
             </button>
-          )}
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* Loading State */}
-      {isSearching && (
-        <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-12 text-center shadow-lg shadow-cyan-500/10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <h3 className="text-xl font-bold text-white mb-2">Searching...</h3>
-          <p className="text-slate-400">Please wait while we search for sales records.</p>
+      {/* Summary Statistics */}
+      <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 shadow-lg shadow-cyan-500/10">
+        <div className="flex items-center space-x-3 mb-4">
+          <BarChart3 className="w-5 h-5 text-cyan-400" />
+          <h3 className="text-lg font-semibold text-white">📊 Sales Summary</h3>
         </div>
-      )}
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-slate-800/30 rounded-xl p-4 text-center border border-slate-600">
+            <div className="text-2xl font-bold text-emerald-400">{totalSales}</div>
+            <div className="text-slate-400 text-sm">Total Sales</div>
+          </div>
+          <div className="bg-slate-800/30 rounded-xl p-4 text-center border border-slate-600">
+            <div className="text-2xl font-bold text-green-400">{formatCurrency(totalRevenue)}</div>
+            <div className="text-slate-400 text-sm">Total Revenue</div>
+          </div>
+          <div className="bg-slate-800/30 rounded-xl p-4 text-center border border-slate-600">
+            <div className="text-2xl font-bold text-blue-400">{totalProducts}</div>
+            <div className="text-slate-400 text-sm">Total Products</div>
+          </div>
+          <div className="bg-slate-800/30 rounded-xl p-4 text-center border border-slate-600">
+            <div className="text-2xl font-bold text-purple-400">{uniqueProducts}</div>
+            <div className="text-slate-400 text-sm">Unique Products</div>
+          </div>
+        </div>
+      </div> 
+
+      {/* Main Table Section */}
+      <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl shadow-lg shadow-cyan-500/10">
+        {/* Table Actions */}
+        <div className="p-6 border-b border-slate-600">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Sold Products List - Detailed View</h3>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleExportData}
+                className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>📊 Export to Excel</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>📋 Print Report</span>
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                <Package className="w-4 h-4" />
+                <span>🔄 Refresh Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {filteredSales.length === 0 ? (
+          /* Empty State */
+          <div className="p-12 text-center">
+            <Package className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-400 mb-2">📦 No Sales Found</h3>
+            <p className="text-slate-500 mb-4">
+              {searchTerm || startDate || endDate || selectedSeller !== 'all'
+                ? "No results match your current filters."
+                : "No products have been sold yet."}
+            </p>
+            {(searchTerm || startDate || endDate || selectedSeller !== 'all') && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-600 bg-slate-800/30">
+                    <th className="text-left p-4 text-slate-300 font-semibold">#</th>
+                    <th className="text-left p-4 text-slate-300 font-semibold">Product Name</th>
+                    <th className="text-left p-4 text-slate-300 font-semibold">Qty</th>
+                    <th className="text-left p-4 text-slate-300 font-semibold">Unit Price</th>
+                    <th className="text-left p-4 text-slate-300 font-semibold">Sale Date</th>
+                    <th className="text-left p-4 text-slate-300 font-semibold">Seller Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSales.map((sale, index) => {
+                    const globalIndex = startIndex + index + 1;
+                    const saleDate = new Date(sale.dateOfSale);
+                    const now = new Date();
+                    const diffTime = now.getTime() - saleDate.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // Color coding based on recency
+                    let rowBgClass = 'hover:bg-white/5';
+                    if (diffDays <= 1) {
+                      rowBgClass = 'bg-green-500/10 hover:bg-green-500/20'; // 🟢 Recent (24 hours)
+                    } else if (diffDays <= 7) {
+                      rowBgClass = 'bg-yellow-500/10 hover:bg-yellow-500/20'; // 🟡 This week
+                    } else if (diffDays <= 30) {
+                      rowBgClass = 'bg-blue-500/10 hover:bg-blue-500/20'; // 🔵 This month
+                    }
+
+                    return (
+                      <tr 
+                        key={sale.saleId}
+                        className={`border-b border-slate-700/50 transition-colors ${rowBgClass}`}
+                      >
+                        <td className="p-4 text-slate-300 font-medium">{globalIndex}</td>
+                        <td className="p-4 text-white">{sale.productName}</td>
+                        <td className="p-4 text-center text-slate-300">{sale.quantity}</td>
+                        <td className="p-4 text-emerald-400 font-semibold">{formatCurrency(sale.pricePerUnit)}</td>
+                        <td className="p-4 text-slate-300">{formatDate(sale.dateOfSale)}</td>
+                        <td className="p-4 text-slate-300">{sale.soldByEmail || 'N/A'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-6 border-t border-slate-600">
+                <div className="flex items-center space-x-4">
+                  <span className="text-slate-400 text-sm">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredSales.length)} of {filteredSales.length} sales
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-400 text-sm">Items per page:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-1 bg-slate-800/50 border border-slate-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={filteredSales.length}>All</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center space-x-1 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>⬅️ Previous</span>
+                  </button>
+
+                  {getPageNumbers().map((page, index) => (
+                    <button
+                      key={index}
+                      onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                      disabled={page === '...'}
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                        page === currentPage
+                          ? 'bg-cyan-500 text-white'
+                          : page === '...'
+                          ? 'text-slate-500 cursor-default'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center space-x-1 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>Next ➡️</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
 
-export default SoldProducts; 
+export default SoldProducts;

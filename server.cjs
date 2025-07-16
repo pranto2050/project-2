@@ -26,8 +26,7 @@ const FILES = {
   sales: path.join(DATA_DIR, 'sales.json'),
   purchases: path.join(DATA_DIR, 'purchases.json'),
   returns: path.join(DATA_DIR, 'returns.json'),
-  warranties: path.join(DATA_DIR, 'warranty-approvals.json'),
-  soldproducts: path.join(DATA_DIR, 'soldproducts.json')
+  warranties: path.join(DATA_DIR, 'warranty-approvals.json')
 };
 
 // Ensure sales and warranty subdirectories exist
@@ -365,31 +364,7 @@ app.post('/api/sales', async (req, res) => {
     sales.push(sale);
     await writeJsonFile(FILES.sales, sales);
     
-    // Also add to sold products with additional info
-    let soldProducts = [];
-    if (await fs.pathExists(FILES.soldproducts)) {
-      soldProducts = await readJsonFile(FILES.soldproducts);
-    }
-    
-    const soldProduct = {
-      id: `sold-${Date.now()}`,
-      productID: sale.productID,
-      productName: sale.productName,
-      quantitySold: sale.quantitySold,
-      pricePerUnit: sale.pricePerUnit,
-      totalPrice: sale.totalPrice,
-      unit: sale.unit,
-      timestamp: sale.timestamp,
-      userId: sale.userId,
-      userEmail: sale.userEmail,
-      saleDate: new Date(sale.timestamp).toISOString().split('T')[0],
-      soldBy: sale.userId
-    };
-    
-    soldProducts.push(soldProduct);
-    await writeJsonFile(FILES.soldproducts, soldProducts);
-    
-    res.json({ success: true, message: 'Sale recorded and added to sold products' });
+    res.json({ success: true, message: 'Sale recorded successfully' });
   } catch (error) {
     console.error('Error saving sale:', error);
     res.status(500).json({ success: false, message: 'Failed to save sale' });
@@ -603,13 +578,27 @@ app.get('/api/sales/daily/:date', async (req, res) => {
   }
 });
 
-// Get sold products
+// Get sold products (using sales data)
 app.get('/api/soldproducts', async (req, res) => {
   try {
-    let soldProducts = [];
-    if (await fs.pathExists(FILES.soldproducts)) {
-      soldProducts = await readJsonFile(FILES.soldproducts);
-    }
+    const sales = await readJsonFile(FILES.sales);
+    // Map sales data to soldProducts format for backward compatibility
+    const soldProducts = sales.map(sale => ({
+      saleId: sale.saleId,
+      productId: sale.productId,
+      productName: sale.productName,
+      quantity: sale.quantity,
+      pricePerUnit: sale.pricePerUnit,
+      totalPrice: sale.totalPrice,
+      unit: sale.unit,
+      dateOfSale: sale.dateOfSale,
+      customerName: sale.customerName,
+      customerEmail: sale.customerEmail,
+      customerMobile: sale.customerMobile,
+      soldByEmail: sale.soldByEmail,
+      soldBy: sale.soldBy,
+      timestamp: sale.timestamp
+    }));
     res.json({ success: true, soldProducts });
   } catch (error) {
     console.error('Error fetching sold products:', error);

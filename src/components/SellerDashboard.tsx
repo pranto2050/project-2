@@ -30,7 +30,6 @@ import ProductDetailModal from './ProductDetailModal';
 import QuantityModal from './QuantityModal';
 import PurchaseQuantityModal from './PurchaseQuantityModal';
 import WarrantyManagement from './WarrantyManagement';
-import SoldProducts from './SoldProducts';
 import BrandManagement from './BrandManagement';
 import PurchaseModal from './PurchaseModal';
 import ReturnModal from './ReturnModal';
@@ -72,8 +71,16 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [showPurchaseQuantityModal, setShowPurchaseQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [salesItems, setSalesItems] = useState<any[]>([]);
-  const [purchaseItems, setPurchaseItems] = useState<any[]>([]);
+  const [salesItems, setSalesItems] = useState<Array<{
+    product: Product;
+    quantity: number;
+    totalPrice: number;
+  }>>([]);
+  const [purchaseItems, setPurchaseItems] = useState<Array<{
+    product: Product;
+    quantity: number;
+    totalCost: number;
+  }>>([]);
   const [notification, setNotification] = useState<string>('');
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
   const [todaysSalesData, setTodaysSalesData] = useState<DailySales>({
@@ -82,25 +89,20 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     totalAmount: 0,
     totalItems: 0
   });
-  const [completedSaleItems, setCompletedSaleItems] = useState<any[]>([]);
-  const [completedCustomerDetails, setCompletedCustomerDetails] = useState<any>(null);
+  const [completedSaleItems, setCompletedSaleItems] = useState<Array<{
+    product: Product;
+    quantity: number;
+    totalPrice: number;
+  }>>([]);
+  const [completedCustomerDetails, setCompletedCustomerDetails] = useState<CustomerDetails | null>(null);
 
   // Pagination state for products
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
 
-  // Now check for seller access
-  if (!user || user.role !== 'seller') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
-        <div className="text-white text-xl">Access Denied</div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     loadData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update product types when category changes
   useEffect(() => {
@@ -136,6 +138,15 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       setSelectedBrand('');
     }
   }, [selectedProductType, products]);
+
+  // Now check for seller access
+  if (!user || user.role !== 'seller') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+        <div className="text-white text-xl">Access Denied</div>
+      </div>
+    );
+  }
 
   const loadData = async () => {
     try {
@@ -324,7 +335,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       setShowSalesModal(false);
       
       setCompletedSaleItems(completedSaleItems);
-      setCompletedCustomerDetails(customerDetails);
+      setCompletedCustomerDetails(customerDetails || null);
       setShowReceiptModal(true);
       showNotification('Sale completed successfully!');
     } catch (error) {
@@ -333,7 +344,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     }
   };
 
-  const completePurchase = (_customDateTime?: string) => {
+  const completePurchase = () => {
     showNotification('Purchase completion requires admin access. Please contact administrator.');
   };
 
@@ -847,7 +858,41 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
         )}
 
         {activeTab === 'sold-products' && (
-          <SoldProducts sales={sales} />
+          <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-6 shadow-lg shadow-cyan-500/10">
+            <h2 className="text-xl font-bold text-white mb-6">Sold Products</h2>
+            {sales.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">No Sales Found</h3>
+                <p className="text-slate-400">No products have been sold yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="py-3 px-4 text-slate-400">Product</th>
+                      <th className="py-3 px-4 text-slate-400">Quantity</th>
+                      <th className="py-3 px-4 text-slate-400">Price</th>
+                      <th className="py-3 px-4 text-slate-400">Total</th>
+                      <th className="py-3 px-4 text-slate-400">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.map((sale, index) => (
+                      <tr key={index} className="border-b border-slate-700/30 hover:bg-white/5">
+                        <td className="py-3 px-4 text-white">{sale.productName}</td>
+                        <td className="py-3 px-4 text-slate-300">{sale.quantitySold}</td>
+                        <td className="py-3 px-4 text-slate-300">৳{sale.pricePerUnit}</td>
+                        <td className="py-3 px-4 text-green-400 font-bold">৳{sale.totalPrice}</td>
+                        <td className="py-3 px-4 text-slate-300">{new Date(sale.timestamp).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'purchases' && (
@@ -1044,7 +1089,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
             salesItems={completedSaleItems}
             receiptNumber={lastReceiptNumber}
             cashierName={user.name}
-            customerDetails={completedCustomerDetails}
+            customerDetails={completedCustomerDetails || undefined}
           />
         )}
 
