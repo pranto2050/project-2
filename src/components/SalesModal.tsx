@@ -76,9 +76,9 @@ const SalesModal: React.FC<SalesModalProps> = ({
       warrantyEndDate
     };
 
-    // Prepare customer details if both name and mobile number are provided (both are required)
-    const customerDetails: CustomerDetails | undefined = (customerName.trim() && customerMobile.trim()) ? {
-      name: customerName.trim(),
+    // Prepare customer details if mobile number is provided (mobile is required)
+    const customerDetails: CustomerDetails | undefined = customerMobile.trim() ? {
+      name: customerName.trim() || 'Customer', // Default to 'Customer' if name is not provided
       mobile: customerMobile.trim(),
       email: customerEmail.trim(),
       address: customerAddress.trim()
@@ -185,16 +185,14 @@ const SalesModal: React.FC<SalesModalProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Customer Information</h3>
-                  <p className="text-slate-400 text-sm">Add customer details (name and mobile number are required)</p>
+                  <p className="text-slate-400 text-sm">Add customer details (mobile number is required)</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Name (Required) */}
+                {/* Customer Name */}
                 <div>
-                  <label className="block text-slate-400 text-sm mb-2">
-                    Customer Name <span className="text-red-400">*</span>
-                  </label>
+                  <label className="block text-slate-400 text-sm mb-2">Customer Name</label>
                   <input
                     type="text"
                     value={customerName}
@@ -231,7 +229,7 @@ const SalesModal: React.FC<SalesModalProps> = ({
                 </div>
 
                 {/* Customer Address */}
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-slate-400 text-sm mb-2">Address</label>
                   <textarea
                     value={customerAddress}

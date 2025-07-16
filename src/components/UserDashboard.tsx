@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, User, Package, Trash2, Plus, Minus, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, User, Package, Trash2, Plus, Minus, LogOut, ShoppingBag } from 'lucide-react';
 import { getCurrentUser, logout, updateUser, validateUserSession } from '../utils/auth';
-import { getProducts, updateStock, logSale } from '../utils/storage';
+import { getProducts, searchProducts, updateStock, logSale } from '../utils/storage';
 import { Product, CartItem, User as UserType, SaleRecord, SaleItem } from '../types';
 import ProductCard from './ProductCard';
 import SalesModal from './SalesModal';
@@ -18,10 +18,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
   const [user, setUser] = useState<UserType | null>(getCurrentUser());
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [salesItems, setSalesItems] = useState<SaleItem[]>([]);
   const [completedSaleItems, setCompletedSaleItems] = useState<SaleItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'browse' | 'cart' | 'profile'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'search' | 'cart' | 'sales' | 'profile'>('browse');
   const [notification, setNotification] = useState<string>('');
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
@@ -33,6 +34,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [sortBy, setSortBy] = useState('');
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setSelectedBrand('');
+    setSelectedModel('');
+    setSortBy('');
+  };
 
   // Security check - ensure user is authenticated
   useEffect(() => {
@@ -71,6 +82,18 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     };
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    const performSearch = async () => {
+      if (searchQuery.trim()) {
+        const results = await searchProducts(searchQuery);
+        setSearchResults(results);
+      } else {
+        setSearchResults([]);
+      }
+    };
+    performSearch();
+  }, [searchQuery]);
 
   const showNotification = (message: string) => {
     setNotification(message);
@@ -134,7 +157,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     setSalesItems(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const completeSale = async () => {
+  const completeSale = async (customDateTime?: string, warrantyInfo?: { dateOfSale: string; warrantyEndDate: string }, customerDetails?: { mobile: string; email: string; address: string }) => {
     if (!user || salesItems.length === 0) return;
     const receiptNumber = `RCP${Date.now()}`;
     setLastReceiptNumber(receiptNumber);
@@ -276,11 +299,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
     (!selectedCategory || p.category === selectedCategory) &&
     (!selectedSubcategory || p.subcategory === selectedSubcategory) &&
     (!selectedBrand || p.brand === selectedBrand) &&
-    (!selectedModel || p.model === selectedModel) &&
-    (searchQuery.trim() === '' || 
-     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     p.id.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    (!selectedModel || p.model === selectedModel)
   );
 
   return (
@@ -319,6 +338,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
         <div className="flex space-x-1 mb-8 bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20">
           {[
             { id: 'browse', label: 'Browse Products', icon: Package },
+            { id: 'search', label: 'Search Products', icon: Search },
             { id: 'cart', label: `Shopping Cart (${cartItemCount})`, icon: ShoppingCart },
             { id: 'profile', label: 'Profile', icon: User }
           ].map(tab => (
@@ -353,6 +373,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
               setSelectedBrand={setSelectedBrand}
               selectedModel={selectedModel}
               setSelectedModel={setSelectedModel}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              onClearFilters={handleClearFilters}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map(product => (
@@ -365,6 +388,54 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
                   showSeeMore={true}
                 />
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'search' && (
+          <div>
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-8">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by Product ID or Name..."
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400/50"
+                />
+              </div>
+            </div>
+
+            {searchQuery && (
+              <div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  Search Results ({searchResults.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {searchResults.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAddToCart={addToCart}
+                      onSeeMore={handleSeeMore}
+                      showAddToCart={true}
+                      showSeeMore={true}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'sales' && (
+          <div>
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-12 text-center">
+              <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-4">Sales Feature Not Available</h2>
+              <p className="text-slate-400 text-lg">This feature is only available for administrators.</p>
+              <p className="text-slate-500 text-sm mt-2">Please contact an admin to process sales.</p>
             </div>
           </div>
         )}

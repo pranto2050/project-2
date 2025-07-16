@@ -68,8 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState('');
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
@@ -488,6 +487,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setSelectedBrand('');
+    setSelectedModel('');
+    setSortBy('');
+  };
+
   const filteredProducts = products
     .filter(product =>
       (!selectedCategory || product.category === selectedCategory) &&
@@ -500,20 +508,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       )
     )
     .sort((a, b) => {
-      let aValue = a[sortBy as keyof Product];
-      let bValue = b[sortBy as keyof Product];
+      if (!sortBy) return 0;
       
-      // Handle undefined values
-      if (aValue === undefined) aValue = '';
-      if (bValue === undefined) bValue = '';
-      
-      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-      
-      if (sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      switch (sortBy) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'price-asc':
+          return a.pricePerUnit - b.pricePerUnit;
+        case 'price-desc':
+          return b.pricePerUnit - a.pricePerUnit;
+        case 'stock-asc':
+          return a.stock - b.stock;
+        case 'stock-desc':
+          return b.stock - a.stock;
+        case 'newest':
+          return new Date(b.addedDate || '').getTime() - new Date(a.addedDate || '').getTime();
+        case 'oldest':
+          return new Date(a.addedDate || '').getTime() - new Date(b.addedDate || '').getTime();
+        default:
+          return 0;
       }
     });
 
@@ -789,23 +804,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 setSelectedBrand={setSelectedBrand}
                 selectedModel={selectedModel}
                 setSelectedModel={setSelectedModel}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onClearFilters={handleClearFilters}
               />
-              <select
-                value={`${sortBy}-${sortOrder}`}
-                onChange={(e) => {
-                  const [field, order] = e.target.value.split('-');
-                  setSortBy(field);
-                  setSortOrder(order as 'asc' | 'desc');
-                }}
-                className="px-4 py-3 bg-white/10 border border-cyan-400/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-              >
-                <option value="name-asc" className="bg-slate-800">Name A-Z</option>
-                <option value="name-desc" className="bg-slate-800">Name Z-A</option>
-                <option value="pricePerUnit-asc" className="bg-slate-800">Price Low-High</option>
-                <option value="pricePerUnit-desc" className="bg-slate-800">Price High-Low</option>
-                <option value="stock-asc" className="bg-slate-800">Stock Low-High</option>
-                <option value="stock-desc" className="bg-slate-800">Stock High-Low</option>
-              </select>
             </div>
 
             {/* Product Grid */}

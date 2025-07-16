@@ -111,5 +111,22 @@
     "timestamp": "2025-07-16T06:50:00.946Z",
     "customerMobile": "0198898778",
     "customerAddress": "ghfhgf"
+  },
+  {
+    "saleId": "s-1752653707660",
+    "productId": "IT2025-1752645505642",
+    "productName": "sdfsdf",
+    "customerId": "admin-1752640309387",
+    "customerEmail": "a@gmail.com",
+    "quantity": 1,
+    "pricePerUnit": 20,
+    "totalPrice": 20,
+    "unit": "Picec",
+    "currency": "BDT",
+    "dateOfSale": "2025-07-16",
+    "warrantyEndDate": "2026-07-16",
+    "timestamp": "2025-07-16T08:15:07.660Z",
+    "customerMobile": "0197972888",
+    "customerAddress": ""
   }
 ]

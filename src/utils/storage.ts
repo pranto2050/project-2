@@ -1,4 +1,4 @@
-import { Product, SaleRecord, PurchaseRecord, ReturnRecord, DailySales, Category, Customer, CustomerDetails } from '../types';
+import { Product, SaleRecord, PurchaseRecord, ReturnRecord, DailySales, Category } from '../types';
 import { apiService } from './apiService';
 
 // Products
@@ -358,101 +358,5 @@ export const deleteBrand = async (brandId: string): Promise<boolean> => {
   } catch (error) {
     console.error('Failed to delete brand:', error);
     return false;
-  }
-};
-
-// Customer management functions
-export const getCustomers = async (): Promise<Customer[]> => {
-  try {
-    const response = await fetch('http://localhost:3001/api/customers');
-    const result = await response.json();
-    return result.data || [];
-  } catch (error) {
-    console.error('Failed to fetch customers:', error);
-    return [];
-  }
-};
-
-export const addCustomer = async (customer: Customer): Promise<boolean> => {
-  try {
-    const response = await fetch('http://localhost:3001/api/customers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(customer)
-    });
-    const result = await response.json();
-    return result.success;
-  } catch (error) {
-    console.error('Failed to add customer:', error);
-    return false;
-  }
-};
-
-export const updateCustomer = async (customerId: string, customer: Customer): Promise<boolean> => {
-  try {
-    const response = await fetch(`http://localhost:3001/api/customers/${customerId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(customer)
-    });
-    const result = await response.json();
-    return result.success;
-  } catch (error) {
-    console.error('Failed to update customer:', error);
-    return false;
-  }
-};
-
-export const getCustomerByMobile = async (mobile: string): Promise<Customer | null> => {
-  try {
-    const customers = await getCustomers();
-    return customers.find(customer => customer.mobile === mobile) || null;
-  } catch (error) {
-    console.error('Failed to find customer by mobile:', error);
-    return null;
-  }
-};
-
-export const saveCustomerData = async (customerDetails: CustomerDetails): Promise<Customer | null> => {
-  try {
-    // Check if customer already exists
-    const existingCustomer = await getCustomerByMobile(customerDetails.mobile);
-    
-    if (existingCustomer) {
-      // Update existing customer
-      const updatedCustomer: Customer = {
-        ...existingCustomer,
-        name: customerDetails.name,
-        email: customerDetails.email,
-        address: customerDetails.address,
-        totalPurchases: existingCustomer.totalPurchases + 1,
-        lastPurchaseDate: new Date().toISOString()
-      };
-      
-      const success = await updateCustomer(existingCustomer.id, updatedCustomer);
-      return success ? updatedCustomer : null;
-    } else {
-      // Create new customer
-      const newCustomer: Customer = {
-        id: `cust-${Date.now()}`,
-        name: customerDetails.name,
-        mobile: customerDetails.mobile,
-        email: customerDetails.email,
-        address: customerDetails.address,
-        registrationDate: new Date().toISOString(),
-        totalPurchases: 1,
-        lastPurchaseDate: new Date().toISOString()
-      };
-      
-      const success = await addCustomer(newCustomer);
-      return success ? newCustomer : null;
-    }
-  } catch (error) {
-    console.error('Failed to save customer data:', error);
-    return null;
   }
 };

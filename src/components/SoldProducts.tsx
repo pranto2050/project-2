@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Filter, Calendar, DollarSign, Package, User, Fingerprint, Download, Phone } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Filter, Calendar, DollarSign, Package, User, Shield, Fingerprint, Download, Phone } from 'lucide-react';
 import { SaleRecord } from '../types';
 
 interface SoldProductsProps {
@@ -20,7 +20,6 @@ interface FlattenedSaleItem {
   userEmail: string;
   commonId: string;
   uniqueId: string;
-  customerName?: string;
   customerMobile?: string;
   customerEmail?: string;
   customerAddress?: string;
@@ -31,7 +30,6 @@ interface FlattenedSaleItem {
 }
 
 const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
-  const [soldProducts, setSoldProducts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,24 +43,6 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
   const [customerInfo, setCustomerInfo] = useState<{ mobile: string; email: string; address: string } | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  // Fetch sold products data
-  useEffect(() => {
-    const fetchSoldProducts = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/soldproducts');
-        const data = await response.json();
-        if (data.success) {
-          setSoldProducts(data.soldProducts);
-        }
-      } catch (error) {
-        console.error('Error fetching sold products:', error);
-        setSearchError('Failed to fetch sold products data');
-      }
-    };
-
-    fetchSoldProducts();
-  }, []);
-
   // Flatten sales data to show individual products from bulk sales
   const flattenSales = (salesData: SaleRecord[]): FlattenedSaleItem[] => {
     const flattened: FlattenedSaleItem[] = [];
@@ -73,12 +53,10 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
         for (let i = 0; i < sale.quantitySold; i++) {
           flattened.push({
             ...sale,
-            saleId: sale.productID + '-' + Date.now() + '-' + i, // Generate unique saleId
             itemIndex: i + 1,
             individualPrice: sale.pricePerUnit,
             individualQuantity: 1,
             totalPrice: sale.pricePerUnit, // Individual item price
-            customerName: sale.customer?.name,
             customerMobile: sale.customer?.mobile,
             customerEmail: sale.customer?.email,
             customerAddress: sale.customer?.address,
@@ -88,11 +66,9 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
         // Single item sale
         flattened.push({
           ...sale,
-          saleId: sale.productID + '-' + Date.now(), // Generate unique saleId
           itemIndex: 1,
           individualPrice: sale.pricePerUnit,
           individualQuantity: sale.quantitySold,
-          customerName: sale.customer?.name,
           customerMobile: sale.customer?.mobile,
           customerEmail: sale.customer?.email,
           customerAddress: sale.customer?.address,
@@ -162,38 +138,11 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
   const [salesData, setSalesData] = useState<FlattenedSaleItem[]>([]);
   const [apiSearchResults, setApiSearchResults] = useState<FlattenedSaleItem[]>([]);
 
-  // Load initial sales data from soldProducts API instead of sales prop
+  // Load initial sales data
   useEffect(() => {
-    if (soldProducts.length > 0) {
-      // Transform soldProducts data to FlattenedSaleItem format
-      const transformedData: FlattenedSaleItem[] = soldProducts.map((item, index) => ({
-        saleId: item.id || `sale-${index}`,
-        productID: item.productID,
-        productName: item.productName,
-        quantitySold: item.quantitySold,
-        pricePerUnit: item.pricePerUnit,
-        totalPrice: item.totalPrice,
-        unit: item.unit || 'piece',
-        timestamp: item.timestamp,
-        userId: item.userId,
-        userEmail: item.userEmail,
-        commonId: item.productID,
-        uniqueId: item.productID,
-        customerName: item.customerName,
-        customerMobile: item.customerMobile,
-        customerEmail: item.customerEmail,
-        customerAddress: item.customerAddress,
-        itemIndex: 1,
-        individualPrice: item.pricePerUnit,
-        individualQuantity: item.quantitySold,
-      }));
-      setSalesData(transformedData);
-    } else {
-      // Fallback to sales prop if soldProducts is not available
-      const flattenedData = flattenSales(sales);
-      setSalesData(flattenedData);
-    }
-  }, [soldProducts, sales]);
+    const flattenedData = flattenSales(sales);
+    setSalesData(flattenedData);
+  }, [sales]);
 
   // Handle search based on filter type
   useEffect(() => {
@@ -309,6 +258,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
 
   // Calculate totals
   const totalAmount = filteredSales.reduce((sum, sale) => sum + sale.totalPrice, 0);
+  const totalItems = filteredSales.length; // Count individual items
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -359,18 +309,17 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
 
   const handleExportData = () => {
     const csvContent = [
-      ['Product Name', 'Product ID', 'Quantity', 'Price (৳)', 'Total (৳)', 'Sale Date', 'Customer Name', 'Mobile Number', 'Customer Email', 'Sold By'],
+      ['Unique ID', 'Product Name', 'Common ID', 'Quantity', 'Rate (৳)', 'Amount (৳)', 'Sale Date', 'Customer', 'Mobile Number'],
       ...filteredSales.map(sale => [
+        sale.uniqueId || 'N/A',
         sale.productName,
-        sale.productID,
-        `${sale.individualQuantity} ${sale.unit}`,
+        sale.commonId || 'N/A',
+        sale.individualQuantity,
         sale.individualPrice.toString(),
         sale.totalPrice.toString(),
         formatDate(sale.timestamp),
-        sale.customerName || 'N/A',
-        sale.customerMobile || 'N/A',
-        sale.customerEmail || 'N/A',
-        sale.userEmail
+        sale.userEmail,
+        sale.customerMobile || 'N/A'
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -394,6 +343,10 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
     setApiSearchResults([]);
   };
 
+  const validateMobileNumber = (mobile: string): boolean => {
+    return /^[0-9+\-\s()]{10,15}$/.test(mobile.trim());
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -405,7 +358,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">Sold Products</h2>
-              <p className="text-slate-400">View all sold products with detailed customer information - Updated v2.0</p>
+              <p className="text-slate-400">View all sold products with detailed information</p>
             </div>
           </div>
           
@@ -543,7 +496,6 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-              // Filter Section
                 onClick={() => setShowDateFilter(!showDateFilter)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   showDateFilter 
@@ -612,7 +564,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
         </div>
       </div>
 
-      {/* Sales Table - Customer Info Table v2.0 */}
+      {/* Sales Table */}
       <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl shadow-lg shadow-cyan-500/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -620,32 +572,38 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   <div className="flex items-center space-x-2">
-                    <Package className="w-4 h-4" />
-                    <span>Product</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
                     <Fingerprint className="w-4 h-4" />
-                    <span>ID</span>
+                    <span>Unique ID</span>
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   <div className="flex items-center space-x-2">
                     <Package className="w-4 h-4" />
-                    <span>Quantity</span>
+                    <span>Product Name</span>
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <div className="flex items-center space-x-2">
+                    <Filter className="w-4 h-4" />
+                    <span>Common ID</span>
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <div className="flex items-center space-x-2">
+                    <Package className="w-4 h-4" />
+                    <span>Qty</span>
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4" />
-                    <span>Price</span>
+                    <span>Rate (৳)</span>
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4" />
-                    <span>Total</span>
+                    <span>Amount (৳)</span>
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -657,25 +615,7 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   <div className="flex items-center space-x-2">
                     <User className="w-4 h-4" />
-                    <span>Customer Name</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4" />
-                    <span>Mobile Number</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>Customer Email</span>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>Sold By</span>
+                    <span>Customer</span>
                   </div>
                 </th>
               </tr>
@@ -687,13 +627,21 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
                   className="hover:bg-white/5 transition-colors duration-200"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">
-                      {sale.productName}
+                    <div className="text-sm font-mono text-cyan-400">
+                      {sale.uniqueId || 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono text-cyan-400">
-                      {sale.productID}
+                    <div className="text-sm font-medium text-white">
+                      {sale.productName}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      ID: {sale.productID}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-mono text-blue-400">
+                      {sale.commonId || 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -718,23 +666,13 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">
-                      {sale.customerName || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-cyan-400">
-                      {sale.customerMobile || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-300">
-                      {sale.customerEmail || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-400">
                       {sale.userEmail}
                     </div>
+                    {sale.customerMobile && (
+                      <div className="text-xs text-slate-400">
+                        📱 {sale.customerMobile}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -823,4 +761,4 @@ const SoldProducts: React.FC<SoldProductsProps> = ({ sales }) => {
   );
 };
 
-export default SoldProducts;
+export default SoldProducts; 
