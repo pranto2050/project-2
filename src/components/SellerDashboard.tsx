@@ -875,17 +875,24 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                       <th className="py-3 px-4 text-slate-400">Quantity</th>
                       <th className="py-3 px-4 text-slate-400">Price</th>
                       <th className="py-3 px-4 text-slate-400">Total</th>
-                      <th className="py-3 px-4 text-slate-400">Date</th>
+                      <th className="py-3 px-4 text-slate-400">Date & Time</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sales.map((sale, index) => (
+                    {sales
+                      // Sort by timestamp: most recent sales first (precise time-based sorting)
+                      .sort((a, b) => {
+                        const dateA = new Date(a.timestamp);
+                        const dateB = new Date(b.timestamp);
+                        return dateB.getTime() - dateA.getTime(); // Descending order (most recent first)
+                      })
+                      .map((sale, index) => (
                       <tr key={index} className="border-b border-slate-700/30 hover:bg-white/5">
                         <td className="py-3 px-4 text-white">{sale.productName}</td>
                         <td className="py-3 px-4 text-slate-300">{sale.quantitySold}</td>
                         <td className="py-3 px-4 text-slate-300">৳{sale.pricePerUnit}</td>
                         <td className="py-3 px-4 text-green-400 font-bold">৳{sale.totalPrice}</td>
-                        <td className="py-3 px-4 text-slate-300">{new Date(sale.timestamp).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-slate-300">{new Date(sale.timestamp).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

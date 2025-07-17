@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "productID": "IT2025-1752645505642",
+    "productName": "ASUS RT-AX52 AX1800 Dual Band WiFi Router",
+    "quantityAdded": 8,
+    "pricePerUnit": 7000,
+    "totalCost": 56000,
+    "timestamp": "2025-07-17T12:13:53.713Z",
+    "adminId": "admin-1752640309387",
+    "supplier": "Startech",
+    "commonId": "ASUS-RT",
+    "uniqueId": "DSF-1752645480046-954",
+    "id": "purchase-1752754433717"
+  }
+]

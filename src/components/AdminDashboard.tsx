@@ -98,6 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [completedSaleItems, setCompletedSaleItems] = useState<SaleItem[]>([]);
   const [notification, setNotification] = useState<string>('');
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
+  const [lastCustomerDetails, setLastCustomerDetails] = useState<{ name: string; mobile: string; email: string; address: string } | null>(null);
   const [soldProducts, setSoldProducts] = useState<Array<{
     saleId: string;
     productId: string;
@@ -107,6 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     totalPrice: number;
     unit: string;
     dateOfSale: string;
+    timestamp?: string;
     customerName?: string;
     customerEmail?: string;
     customerMobile?: string;
@@ -140,6 +142,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     totalPrice: number;
     unit: string;
     dateOfSale: string;
+    timestamp?: string;
     customerName?: string;
     customerEmail?: string;
     customerMobile?: string;
@@ -392,6 +395,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
       setCompletedSaleItems(itemsForReceipt);
       setSalesItems([]);
+      setLastCustomerDetails(customerDetails || null);
       await loadData();
       setShowSalesModal(false);
       setShowReceiptModal(true);
@@ -1037,6 +1041,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   item.customerName?.toLowerCase().includes(searchLower) ||
                   item.productName?.toLowerCase().includes(searchLower)
                 );
+              })
+              // Sort by timestamp/date: newest first (today's recent sales at the top)
+              .sort((a, b) => {
+                // Use timestamp for precise time sorting, fall back to dateOfSale if timestamp not available
+                const timeA = a.timestamp ? new Date(a.timestamp) : new Date(a.dateOfSale);
+                const timeB = b.timestamp ? new Date(b.timestamp) : new Date(b.dateOfSale);
+                return timeB.getTime() - timeA.getTime(); // Descending order (most recent first)
               });
 
               if (filteredSoldProducts.length === 0) {
@@ -1091,7 +1102,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Quantity</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-24 min-w-[90px]">Price</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-28 min-w-[100px]">Total</th>
-                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">Sale Date</th>
+                          <th className="text-left text-slate-400 font-medium py-3 px-6 w-32 min-w-[120px]">Sale Date & Time</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-40 min-w-[150px]">Customer Name</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-36 min-w-[140px]">Warranty Status</th>
                           <th className="text-left text-slate-400 font-medium py-3 px-6 w-36 min-w-[140px]">Customer Mobile</th>
@@ -1128,7 +1139,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                               <span className="text-green-400 font-semibold whitespace-nowrap">৳{item.totalPrice.toFixed(2)}</span>
                             </td>
                             <td className="py-4 px-6 w-32 min-w-[120px]">
-                              <span className="text-slate-300 whitespace-nowrap">{new Date(item.dateOfSale).toLocaleDateString()}</span>
+                              <span className="text-slate-300 whitespace-nowrap">
+                                {item.timestamp 
+                                  ? new Date(item.timestamp).toLocaleString()
+                                  : new Date(item.dateOfSale).toLocaleDateString()
+                                }
+                              </span>
                             </td>
                             <td className="py-4 px-6 w-40 min-w-[150px]">
                               <span className="text-blue-400 whitespace-nowrap overflow-hidden text-ellipsis block" title={item.customerName || 'N/A'}>
@@ -1360,6 +1376,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           salesItems={completedSaleItems}
           receiptNumber={lastReceiptNumber}
           cashierName={user.name}
+          customerDetails={lastCustomerDetails ? {
+            name: lastCustomerDetails.name,
+            mobile: lastCustomerDetails.mobile,
+            email: lastCustomerDetails.email,
+            address: lastCustomerDetails.address
+          } : undefined}
         />
 
         <ProductDetailModal

@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Download, Printer, FileText, Check, User } from 'lucide-react';
-import { SaleItem } from '../types';
+import { SaleItem, CustomerDetails } from '../types';
 import { ReceiptData, downloadPDFReceipt, printPDFReceipt } from '../utils/pdfGenerator';
 
 interface ReceiptModalProps {
@@ -10,7 +10,7 @@ interface ReceiptModalProps {
   receiptNumber: string;
   cashierName: string;
   completedSalesItems?: SaleItem[];
-  customerDetails?: { mobile: string; email: string; address: string };
+  customerDetails?: CustomerDetails;
 }
 
 const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -47,7 +47,12 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
     totalItems,
     cashierName,
     storeName: 'FRIENDS IT ZONE',
-    customer: customerDetails
+    customer: customerDetails ? {
+      name: customerDetails.name || 'Customer',
+      mobile: customerDetails.mobile,
+      email: customerDetails.email,
+      address: customerDetails.address
+    } : undefined
   };
 
   const handleDownload = async () => {
@@ -124,6 +129,10 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
+                      <p className="text-slate-400">Name:</p>
+                      <p className="text-white font-medium">{customerDetails.name || 'Customer'}</p>
+                    </div>
+                    <div>
                       <p className="text-slate-400">Mobile:</p>
                       <p className="text-white font-medium">{customerDetails.mobile}</p>
                     </div>
@@ -131,7 +140,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
                       <p className="text-slate-400">Email:</p>
                       <p className="text-white font-medium">{customerDetails.email}</p>
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <p className="text-slate-400">Address:</p>
                       <p className="text-white font-medium">{customerDetails.address}</p>
                     </div>

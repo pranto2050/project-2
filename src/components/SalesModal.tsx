@@ -42,6 +42,24 @@ const SalesModal: React.FC<SalesModalProps> = ({
     downloadSalesData();
   };
 
+  const clearAllFormFields = () => {
+    // Clear customer fields
+    setCustomerName('');
+    setCustomerMobile('');
+    setCustomerEmail('');
+    setCustomerAddress('');
+    
+    // Reset date/time fields
+    setCustomDateTime('');
+    setUseCustomDateTime(false);
+    
+    // Reset warranty fields to defaults
+    setDateOfSale(new Date().toISOString().split('T')[0]);
+    setWarrantyPeriod('1 year');
+    setCustomWarrantyEndDate('');
+    setUseCustomWarrantyEnd(false);
+  };
+
   const handleCompleteSale = () => {
     const dateTimeToUse = useCustomDateTime && customDateTime ? customDateTime : undefined;
     
@@ -85,6 +103,9 @@ const SalesModal: React.FC<SalesModalProps> = ({
     } : undefined;
     
     onCompleteSale(dateTimeToUse, warrantyInfo, customerDetails);
+    
+    // Clear all form fields after completing the sale
+    clearAllFormFields();
   };
 
   const getCurrentDateTime = () => {
