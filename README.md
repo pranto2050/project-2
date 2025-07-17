@@ -135,6 +135,7 @@ npm run dev      # Development server
 npm run build    # Production build
 npm run preview  # Preview production build
 npm run lint     # Code linting
+node server.cjs  # Sarver Run
 ```
 
 ### API Endpoints
