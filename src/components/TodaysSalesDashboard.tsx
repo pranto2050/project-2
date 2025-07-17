@@ -8,8 +8,86 @@ import {
   Download,
   BarChart3,
   Clock,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
+
+
+// Simple Modal component
+type ModalProps = {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  title?: string;
+};
+const Modal: React.FC<ModalProps> = ({ open, onClose, children, title }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+      <div className="bg-slate-900 rounded-2xl shadow-2xl border border-cyan-500/30 w-full max-w-3xl mx-4 relative">
+        <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-cyan-500/10">
+          <h2 className="text-xl font-bold text-white">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 overflow-y-auto max-h-[70vh]">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+// MonthlySalesOutput component
+// Add date column: we need to pass sale dates for each product
+interface ProductStatWithDates {
+  productName: string;
+  quantity: number;
+  total: number;
+  dates: string[];
+}
+interface MonthlySalesOutputProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  productStats: ProductStatWithDates[];
+  summary: { totalProducts: number; totalRevenue: number };
+}
+const MonthlySalesOutput: React.FC<MonthlySalesOutputProps> = ({ open, onClose, title, productStats, summary }) => (
+  <Modal open={open} onClose={onClose} title={title}>
+    <div className="mb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+        <div className="text-lg font-bold text-cyan-400">Total Products Sold: <span className="text-white">{summary.totalProducts}</span></div>
+        <div className="text-lg font-bold text-green-400">Total Sales: <span className="text-white">৳{summary.totalRevenue.toLocaleString()}</span></div>
+      </div>
+    </div>
+    <div className="overflow-x-auto max-h-[60vh] min-h-[200px]">
+      <div className="overflow-y-auto max-h-[50vh]">
+        <table className="w-full min-w-[700px]">
+          <thead className="sticky top-0 bg-slate-900 z-10">
+            <tr className="border-b border-slate-700">
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Product</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Quantity Sold</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Total Sales</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Date(s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productStats.length === 0 ? (
+              <tr><td colSpan={4} className="text-center text-slate-400 py-6">No sales in this period.</td></tr>
+            ) : (
+              productStats.map((prod, idx) => (
+                <tr key={prod.productName + idx} className="border-b border-slate-800/50">
+                  <td className="py-2 px-4 text-white font-medium">{prod.productName}</td>
+                  <td className="py-2 px-4 text-blue-400 font-bold">{prod.quantity}</td>
+                  <td className="py-2 px-4 text-green-400 font-bold">৳{prod.total.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-slate-300 text-sm whitespace-pre-line">{prod.dates.join(", ")}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </Modal>
+);
 
 interface SaleRecord {
   saleId: string;
@@ -41,6 +119,7 @@ interface SalesStats {
   salesCount: number;
 }
 
+
 const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({ 
   refreshTrigger, 
   className = "" 
@@ -66,8 +145,16 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
     salesCount: 0
   });
 
+  // Modal state for monthly report
+  const [showMonthlyModal, setShowMonthlyModal] = useState(false);
+  const [monthlyProductStats, setMonthlyProductStats] = useState<ProductStatWithDates[]>([]);
+  const [monthlySummary, setMonthlySummary] = useState<{ totalProducts: number; totalRevenue: number }>({ totalProducts: 0, totalRevenue: 0 });
+
   const [showMonthlyView, setShowMonthlyView] = useState(false);
   const [showCustomDateView, setShowCustomDateView] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customProductStats, setCustomProductStats] = useState<ProductStatWithDates[]>([]);
+  const [customSummary, setCustomSummary] = useState<{ totalProducts: number; totalRevenue: number }>({ totalProducts: 0, totalRevenue: 0 });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,7 +170,19 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
   }, []);
 
   // Fetch sales data
+  // Try to load sales data from local file for development, fallback to API if needed
   const fetchSalesData = async (): Promise<SaleRecord[]> => {
+    // Try local static import (works in Vite/CRA if file is in public/data)
+    try {
+      // @ts-ignore
+      const localData = await import('../../data/sales.json');
+      if (Array.isArray(localData.default)) {
+        return localData.default;
+      }
+    } catch (e) {
+      // Ignore and fallback to API
+    }
+    // Fallback to API
     try {
       const response = await fetch('http://localhost:3001/api/soldproducts');
       if (!response.ok) throw new Error('Failed to fetch sales data');
@@ -127,11 +226,9 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
       const salesData = await fetchSalesData();
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
-      
       // Today's stats
       const todaysData = calculateStats(salesData, todayStr, todayStr);
       setTodaysStats(todaysData);
-
       // Monthly stats (current month)
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const monthlyData = calculateStats(
@@ -140,7 +237,36 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
         todayStr
       );
       setMonthlyStats(monthlyData);
-
+      // Prepare monthly product stats for modal
+      const monthlySales = salesData.filter(sale => {
+        const saleDate = sale.timestamp ? new Date(sale.timestamp) : new Date(sale.dateOfSale);
+        return saleDate >= firstDayOfMonth && saleDate <= new Date(todayStr + 'T23:59:59.999Z');
+      });
+      // Aggregate by product, collect all sale dates
+      const productMap: Record<string, { productName: string; quantity: number; total: number; dates: string[] }> = {};
+      for (const sale of monthlySales) {
+        if (!productMap[sale.productId]) {
+          productMap[sale.productId] = {
+            productName: sale.productName,
+            quantity: 0,
+            total: 0,
+            dates: []
+          };
+        }
+        productMap[sale.productId].quantity += sale.quantity;
+        productMap[sale.productId].total += sale.totalPrice;
+        // Add date (show only date part, unique only)
+        const dateStr = sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : new Date(sale.dateOfSale).toLocaleDateString();
+        if (!productMap[sale.productId].dates.includes(dateStr)) {
+          productMap[sale.productId].dates.push(dateStr);
+        }
+      }
+      const productStats = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
+      setMonthlyProductStats(productStats);
+      setMonthlySummary({
+        totalProducts: productStats.reduce((sum, p) => sum + p.quantity, 0),
+        totalRevenue: productStats.reduce((sum, p) => sum + p.total, 0)
+      });
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -152,13 +278,43 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
   // Load custom date range stats
   const loadCustomStats = async () => {
     if (!startDate || !endDate) return;
-    
     setLoading(true);
     try {
       const salesData = await fetchSalesData();
       const customData = calculateStats(salesData, startDate, endDate);
       setCustomStats(customData);
-      setShowCustomDateView(true);
+      // Prepare product stats for custom range
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      const customSales = salesData.filter(sale => {
+        const saleDate = sale.timestamp ? new Date(sale.timestamp) : new Date(sale.dateOfSale);
+        return saleDate >= start && saleDate <= end;
+      });
+      const productMap: Record<string, { productName: string; quantity: number; total: number; dates: string[] }> = {};
+      for (const sale of customSales) {
+        if (!productMap[sale.productId]) {
+          productMap[sale.productId] = {
+            productName: sale.productName,
+            quantity: 0,
+            total: 0,
+            dates: []
+          };
+        }
+        productMap[sale.productId].quantity += sale.quantity;
+        productMap[sale.productId].total += sale.totalPrice;
+        const dateStr = sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : new Date(sale.dateOfSale).toLocaleDateString();
+        if (!productMap[sale.productId].dates.includes(dateStr)) {
+          productMap[sale.productId].dates.push(dateStr);
+        }
+      }
+      const productStats = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
+      setCustomProductStats(productStats);
+      setCustomSummary({
+        totalProducts: productStats.reduce((sum, p) => sum + p.quantity, 0),
+        totalRevenue: productStats.reduce((sum, p) => sum + p.total, 0)
+      });
+      setShowCustomModal(true);
     } catch (error) {
       console.error('Error loading custom stats:', error);
     } finally {
@@ -417,15 +573,20 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white">Quick Reports</h4>
             <button
-              onClick={() => {
-                setShowMonthlyView(true);
-                setShowCustomDateView(false);
-              }}
+              onClick={() => setShowMonthlyModal(true)}
               className="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 border border-blue-500/30 rounded-xl text-blue-400 font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/20"
             >
               <Calendar className="w-5 h-5" />
               <span>View Monthly Report</span>
             </button>
+      {/* Monthly Modal */}
+      <MonthlySalesOutput
+        open={showMonthlyModal}
+        onClose={() => setShowMonthlyModal(false)}
+        title="Monthly Sales Report"
+        productStats={monthlyProductStats}
+        summary={monthlySummary}
+      />
           </div>
 
           {/* Custom Date Range Filter */}
@@ -459,6 +620,14 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
               <Filter className="w-5 h-5" />
               <span>Filter Range</span>
             </button>
+      {/* Custom Range Modal */}
+      <MonthlySalesOutput
+        open={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        title={`Custom Range Sales Report (${formatDateRange(startDate, endDate)})`}
+        productStats={customProductStats}
+        summary={customSummary}
+      />
           </div>
         </div>
       </div>
