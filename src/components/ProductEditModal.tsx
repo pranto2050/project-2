@@ -73,7 +73,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
     }));
   };
 
-  const networkBrands = ['TP-Link', 'Netgear', 'ASUS', 'D-Link', 'Linksys', 'Cisco', 'Huawei', 'MikroTik', 'Ubiquiti', 'Tenda'];
+  // const networkBrands = ['TP-Link', 'Netgear', 'ASUS', 'D-Link', 'Linksys', 'Cisco', 'Huawei', 'MikroTik', 'Ubiquiti', 'Tenda'];
   
   // Load categories when modal opens
   useEffect(() => {
@@ -119,60 +119,17 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
   const loadExistingProductNames = async (category: string) => {
     try {
-      // This would typically call an API endpoint to get product names by category
-      // For now, we'll use a simple mapping based on the bucket files we found
-      const categoryProductNames: { [key: string]: string[] } = {
-        'Camera': [
-          'Canon EOS 90D',
-          'Sony Alpha A7 III',
-          'Canon EOS R5',
-          'Canon EOS R6',
-          'Canon EOS RP',
-          'Sony Alpha A7R IV',
-          'Canon EOS 6D Mark II',
-          'Sony Alpha A9 II',
-          'Canon EOS 5D Mark IV',
-          'Sony Alpha A7C'
-        ],
-        'Router': [
-          'Asus RT-AC59U',
-          'Netgear Nighthawk AX8',
-          'TP-Link Archer AX20',
-          'D-Link DIR-841',
-          'Asus RT-AX86U',
-          'Netgear R6700',
-          'TP-Link Archer C6',
-          'D-Link DIR-2150',
-          'Huawei AX6',
-          'TP-Link Archer C80'
-        ],
-        'Storage': [
-          'Samsung 970 EVO Plus',
-          'WD Blue 3D NAND',
-          'Crucial MX500',
-          'Seagate Barracuda',
-          'Kingston A2000',
-          'SanDisk Ultra 3D',
-          'Intel 660p',
-          'ADATA XPG SX8200',
-          'Corsair Force MP510',
-          'Team Group MP33'
-        ],
-        'Computing': [
-          'Intel Core i7-10700K',
-          'AMD Ryzen 7 5800X',
-          'Intel Core i5-10600K',
-          'AMD Ryzen 5 5600X',
-          'Intel Core i9-10900K',
-          'AMD Ryzen 9 5900X',
-          'Intel Core i3-10100',
-          'AMD Ryzen 3 3300X',
-          'Intel Core i7-11700K',
-          'AMD Ryzen 7 5800X'
-        ]
-      };
-
-      const names = categoryProductNames[category] || [];
+      // Dynamically fetch product names from products.json for the selected category
+      const response = await fetch('/data/products.json');
+      const products: any[] = await response.json();
+      // Filter by category and extract unique names
+      const names: string[] = Array.from(
+        new Set(
+          products
+            .filter((product: any) => product.category === category)
+            .map((product: any) => product.name)
+        )
+      );
       setExistingProductNames(names);
     } catch (error) {
       console.error('Failed to load existing product names:', error);
