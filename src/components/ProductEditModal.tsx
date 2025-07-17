@@ -57,9 +57,23 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [uniqueIdValidation, setUniqueIdValidation] = useState({ isValid: true, message: '' });
 
   const [networkItem, setNetworkItem] = useState('');
-  const [routerBrand, setRouterBrand] = useState('');
+  // Removed unused routerBrand state
+  const [networkItems, setNetworkItems] = useState<string[]>([]);
 
-  const networkItems = ['Router', 'Switch', 'ONU'];
+  // Load network items from producttype.json
+  useEffect(() => {
+    const loadNetworkItems = async () => {
+      try {
+        const response = await fetch('/data/producttype.json');
+        const data = await response.json();
+        setNetworkItems(Array.isArray(data) ? data.map((item: any) => item.type) : []);
+      } catch (error) {
+        console.error('Failed to load network items:', error);
+        setNetworkItems([]);
+      }
+    };
+    loadNetworkItems();
+  }, []);
   // Helper function to auto-populate brand data from database
   const handleBrandSelection = (selectedBrandName: string) => {
     const selectedBrandData = brands.find(brand => brand.name === selectedBrandName);
@@ -72,7 +86,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
       brandLogo: selectedBrandData?.logoUrl || selectedBrandData?.logoFile || ''
     }));
   };
-
+//
   // const networkBrands = ['TP-Link', 'Netgear', 'ASUS', 'D-Link', 'Linksys', 'Cisco', 'Huawei', 'MikroTik', 'Ubiquiti', 'Tenda'];
   
   // Load categories when modal opens
@@ -105,17 +119,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
     }
   }, [formData.category]);
 
-  // Filter brands based on selected category
-  const getFilteredBrands = () => {
-    if (!formData.category) {
-      return brands; // Show all brands if no category selected
-    }
-    
-    // Filter brands that have the selected category in their categories array
-    return brands.filter(brand => 
-      brand.categories && brand.categories.includes(formData.category)
-    );
-  };
+  // Removed unused getFilteredBrands function
 
   const loadExistingProductNames = async (category: string) => {
     try {
@@ -346,7 +350,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                       onChange={e => {
                         handleInputChange(e);
                         setNetworkItem('');
-                        setRouterBrand('');
+                        // setRouterBrand removed
                       }}
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all"
                       required
