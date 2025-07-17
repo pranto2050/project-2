@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { User as UserType, Product, SaleRecord, ReturnRecord, Category, DailySales, CustomerDetails } from '../types';
 import { getProducts, updateStock, getSalesLogs, getPurchaseLogs, getReturnLogs, getTodaysSales, getCategories } from '../utils/storage';
+import TodaysSalesDashboard from './TodaysSalesDashboard';
 import SalesModal from './SalesModal';
 import ReceiptModal from './ReceiptModal';
 import ProductEditModal from './ProductEditModal';
@@ -95,6 +96,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
     totalPrice: number;
   }>>([]);
   const [completedCustomerDetails, setCompletedCustomerDetails] = useState<CustomerDetails | null>(null);
+  const [salesRefreshCounter, setSalesRefreshCounter] = useState(0);
 
   // Pagination state for products
   const [currentPage, setCurrentPage] = useState(1);
@@ -332,6 +334,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
       
       setSalesItems([]);
       await loadData();
+      setSalesRefreshCounter(prev => prev + 1); // Trigger refresh for TodaysSalesDashboard
       setShowSalesModal(false);
       
       setCompletedSaleItems(completedSaleItems);
@@ -477,46 +480,11 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
 
         {/* Content based on active tab */}
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-6 shadow-lg shadow-cyan-500/10">
-              <h2 className="text-xl font-bold text-white mb-4">Today's Sales Summary</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="text-center">
-                  <p className="text-slate-400 text-sm">Total Sales</p>
-                  <p className="text-green-400 text-2xl font-bold">৳{todaysSalesData.totalAmount.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-400 text-sm">Total Items Sold</p>
-                  <p className="text-green-400 text-2xl font-bold">{todaysSalesData.totalItems}</p>
-                </div>
-              </div>
-              <div className="mt-6">
-                <h3 className="text-lg font-bold text-white mb-2">Sales Breakdown</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="py-2 px-4 text-slate-400">Product</th>
-                        <th className="py-2 px-4 text-slate-400">Quantity</th>
-                        <th className="py-2 px-4 text-slate-400">Price</th>
-                        <th className="py-2 px-4 text-slate-400">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {todaysSalesData.sales.map((sale, index) => (
-                        <tr key={index} className="border-b border-slate-700/30">
-                          <td className="py-2 px-4 text-white">{sale.productName}</td>
-                          <td className="py-2 px-4 text-slate-300">{sale.quantitySold}</td>
-                          <td className="py-2 px-4 text-slate-300">৳{sale.pricePerUnit}</td>
-                          <td className="py-2 px-4 text-green-400 font-bold">৳{sale.totalPrice}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
+          <div className="space-y-6">
+            {/* Today's Sales Dashboard */}
+            <TodaysSalesDashboard refreshTrigger={salesRefreshCounter} />
+            
+            {/* Inventory Overview */}
             <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-6 shadow-lg shadow-cyan-500/10">
               <h2 className="text-xl font-bold text-white mb-4">Inventory Overview</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -529,27 +497,29 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ user, onLogout }) => 
                   <p className="text-red-400 text-2xl font-bold">{lowStockProducts.length}</p>
                 </div>
               </div>
-              <div className="mt-6">
-                <h3 className="text-lg font-bold text-white mb-2">Low Stock Products</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="py-2 px-4 text-slate-400">Product</th>
-                        <th className="py-2 px-4 text-slate-400">Stock</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lowStockProducts.map((product, index) => (
-                        <tr key={index} className="border-b border-slate-700/30">
-                          <td className="py-2 px-4 text-white">{product.name}</td>
-                          <td className="py-2 px-4 text-slate-300">{product.stock}</td>
+              {lowStockProducts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-bold text-white mb-2">Low Stock Products</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-slate-700">
+                          <th className="py-2 px-4 text-slate-400">Product</th>
+                          <th className="py-2 px-4 text-slate-400">Stock</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {lowStockProducts.slice(0, 5).map((product, index) => (
+                          <tr key={index} className="border-b border-slate-700/30">
+                            <td className="py-2 px-4 text-white">{product.name}</td>
+                            <td className="py-2 px-4 text-slate-300">{product.stock}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}

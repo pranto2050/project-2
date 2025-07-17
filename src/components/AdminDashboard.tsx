@@ -7,8 +7,7 @@ import {
   User as UserType, 
   SaleItem, 
   AdminPurchaseItem, 
-  Category, 
-  DailySales 
+  Category
 } from '../types';
 import { 
   getProducts, 
@@ -24,10 +23,10 @@ import {
   getSalesLogs,
   getPurchaseLogs,
   getReturnLogs,
-  getTodaysSales,
   getSoldProducts,
   getBrands
 } from '../utils/storage';
+import TodaysSalesDashboard from './TodaysSalesDashboard';
 import { 
   Monitor,
   LogOut,
@@ -43,7 +42,6 @@ import {
   Users,
   Trash2,
   DollarSign,
-  Calendar,
   AlertTriangle,
   Plus,
   X
@@ -118,12 +116,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   }>>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
-  const [todaysSalesData, setTodaysSalesData] = useState<DailySales>({
-    date: new Date().toISOString().split('T')[0],
-    sales: [],
-    totalAmount: 0,
-    totalItems: 0
-  });
   const [loading, setLoading] = useState(false);
   const [brands, setBrands] = useState<Array<{
     id: string;
@@ -151,6 +143,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     customerAddress?: string;
   } | null>(null);
   const [showSaleDetailModal, setShowSaleDetailModal] = useState(false);
+  const [salesRefreshCounter, setSalesRefreshCounter] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -160,13 +153,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [productsData, categoriesData, salesData, purchasesData, returnsData, todaysSales, soldProductsData] = await Promise.all([
+      const [productsData, categoriesData, salesData, purchasesData, returnsData, soldProductsData] = await Promise.all([
         getProducts(),
         getCategories(),
         getSalesLogs(),
         getPurchaseLogs(),
         getReturnLogs(),
-        getTodaysSales(),
         getSoldProducts()
       ]);
       
@@ -175,7 +167,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       setSales(salesData);
       setPurchases(purchasesData);
       setReturns(returnsData);
-      setTodaysSalesData(todaysSales);
       setSoldProducts(soldProductsData);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -397,6 +388,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       setSalesItems([]);
       setLastCustomerDetails(customerDetails || null);
       await loadData();
+      setSalesRefreshCounter(prev => prev + 1); // Trigger refresh for TodaysSalesDashboard
       setShowSalesModal(false);
       setShowReceiptModal(true);
       showNotification('Sale completed successfully with warranty information!');
@@ -720,27 +712,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Today's Sales */}
-            <div className="bg-white/10 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 shadow-lg shadow-cyan-500/10">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-cyan-400" />
-                Today's Sales
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <p className="text-slate-400 text-sm">Sales Count</p>
-                  <p className="text-2xl font-bold text-cyan-400">{todaysSalesData.sales.length}</p>
-                </div>
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <p className="text-slate-400 text-sm">Items Sold</p>
-                  <p className="text-2xl font-bold text-cyan-400">{todaysSalesData.totalItems}</p>
-                </div>
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <p className="text-slate-400 text-sm">Revenue</p>
-                  <p className="text-2xl font-bold text-cyan-400">৳{todaysSalesData.totalAmount.toLocaleString()}</p>
-                </div>
-              </div>
-            </div>
+            {/* Today's Sales Dashboard */}
+            <TodaysSalesDashboard refreshTrigger={salesRefreshCounter} />
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
