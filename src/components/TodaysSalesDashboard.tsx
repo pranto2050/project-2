@@ -36,11 +36,18 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, title }) => {
 };
 
 // MonthlySalesOutput component
+// Add date column: we need to pass sale dates for each product
+interface ProductStatWithDates {
+  productName: string;
+  quantity: number;
+  total: number;
+  dates: string[];
+}
 interface MonthlySalesOutputProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  productStats: Array<{ productName: string; quantity: number; total: number }>;
+  productStats: ProductStatWithDates[];
   summary: { totalProducts: number; totalRevenue: number };
 }
 const MonthlySalesOutput: React.FC<MonthlySalesOutputProps> = ({ open, onClose, title, productStats, summary }) => (
@@ -51,29 +58,33 @@ const MonthlySalesOutput: React.FC<MonthlySalesOutputProps> = ({ open, onClose, 
         <div className="text-lg font-bold text-green-400">Total Sales: <span className="text-white">৳{summary.totalRevenue.toLocaleString()}</span></div>
       </div>
     </div>
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[500px]">
-        <thead>
-          <tr className="border-b border-slate-700">
-            <th className="text-left text-slate-400 font-medium py-2 px-4">Product</th>
-            <th className="text-left text-slate-400 font-medium py-2 px-4">Quantity Sold</th>
-            <th className="text-left text-slate-400 font-medium py-2 px-4">Total Sales</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productStats.length === 0 ? (
-            <tr><td colSpan={3} className="text-center text-slate-400 py-6">No sales in this period.</td></tr>
-          ) : (
-            productStats.map((prod, idx) => (
-              <tr key={prod.productName + idx} className="border-b border-slate-800/50">
-                <td className="py-2 px-4 text-white font-medium">{prod.productName}</td>
-                <td className="py-2 px-4 text-blue-400 font-bold">{prod.quantity}</td>
-                <td className="py-2 px-4 text-green-400 font-bold">৳{prod.total.toLocaleString()}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+    <div className="overflow-x-auto max-h-[60vh] min-h-[200px]">
+      <div className="overflow-y-auto max-h-[50vh]">
+        <table className="w-full min-w-[700px]">
+          <thead className="sticky top-0 bg-slate-900 z-10">
+            <tr className="border-b border-slate-700">
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Product</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Quantity Sold</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Total Sales</th>
+              <th className="text-left text-slate-400 font-medium py-2 px-4">Date(s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productStats.length === 0 ? (
+              <tr><td colSpan={4} className="text-center text-slate-400 py-6">No sales in this period.</td></tr>
+            ) : (
+              productStats.map((prod, idx) => (
+                <tr key={prod.productName + idx} className="border-b border-slate-800/50">
+                  <td className="py-2 px-4 text-white font-medium">{prod.productName}</td>
+                  <td className="py-2 px-4 text-blue-400 font-bold">{prod.quantity}</td>
+                  <td className="py-2 px-4 text-green-400 font-bold">৳{prod.total.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-slate-300 text-sm whitespace-pre-line">{prod.dates.join(", ")}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   </Modal>
 );
@@ -136,13 +147,13 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
 
   // Modal state for monthly report
   const [showMonthlyModal, setShowMonthlyModal] = useState(false);
-  const [monthlyProductStats, setMonthlyProductStats] = useState<Array<{ productName: string; quantity: number; total: number }>>([]);
+  const [monthlyProductStats, setMonthlyProductStats] = useState<ProductStatWithDates[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<{ totalProducts: number; totalRevenue: number }>({ totalProducts: 0, totalRevenue: 0 });
 
   const [showMonthlyView, setShowMonthlyView] = useState(false);
   const [showCustomDateView, setShowCustomDateView] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
-  const [customProductStats, setCustomProductStats] = useState<Array<{ productName: string; quantity: number; total: number }>>([]);
+  const [customProductStats, setCustomProductStats] = useState<ProductStatWithDates[]>([]);
   const [customSummary, setCustomSummary] = useState<{ totalProducts: number; totalRevenue: number }>({ totalProducts: 0, totalRevenue: 0 });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -159,7 +170,19 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
   }, []);
 
   // Fetch sales data
+  // Try to load sales data from local file for development, fallback to API if needed
   const fetchSalesData = async (): Promise<SaleRecord[]> => {
+    // Try local static import (works in Vite/CRA if file is in public/data)
+    try {
+      // @ts-ignore
+      const localData = await import('../../data/sales.json');
+      if (Array.isArray(localData.default)) {
+        return localData.default;
+      }
+    } catch (e) {
+      // Ignore and fallback to API
+    }
+    // Fallback to API
     try {
       const response = await fetch('http://localhost:3001/api/soldproducts');
       if (!response.ok) throw new Error('Failed to fetch sales data');
@@ -219,18 +242,24 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
         const saleDate = sale.timestamp ? new Date(sale.timestamp) : new Date(sale.dateOfSale);
         return saleDate >= firstDayOfMonth && saleDate <= new Date(todayStr + 'T23:59:59.999Z');
       });
-      // Aggregate by product
-      const productMap: Record<string, { productName: string; quantity: number; total: number }> = {};
+      // Aggregate by product, collect all sale dates
+      const productMap: Record<string, { productName: string; quantity: number; total: number; dates: string[] }> = {};
       for (const sale of monthlySales) {
         if (!productMap[sale.productId]) {
           productMap[sale.productId] = {
             productName: sale.productName,
             quantity: 0,
-            total: 0
+            total: 0,
+            dates: []
           };
         }
         productMap[sale.productId].quantity += sale.quantity;
         productMap[sale.productId].total += sale.totalPrice;
+        // Add date (show only date part, unique only)
+        const dateStr = sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : new Date(sale.dateOfSale).toLocaleDateString();
+        if (!productMap[sale.productId].dates.includes(dateStr)) {
+          productMap[sale.productId].dates.push(dateStr);
+        }
       }
       const productStats = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
       setMonthlyProductStats(productStats);
@@ -262,17 +291,22 @@ const TodaysSalesDashboard: React.FC<TodaysSalesDashboardProps> = ({
         const saleDate = sale.timestamp ? new Date(sale.timestamp) : new Date(sale.dateOfSale);
         return saleDate >= start && saleDate <= end;
       });
-      const productMap: Record<string, { productName: string; quantity: number; total: number }> = {};
+      const productMap: Record<string, { productName: string; quantity: number; total: number; dates: string[] }> = {};
       for (const sale of customSales) {
         if (!productMap[sale.productId]) {
           productMap[sale.productId] = {
             productName: sale.productName,
             quantity: 0,
-            total: 0
+            total: 0,
+            dates: []
           };
         }
         productMap[sale.productId].quantity += sale.quantity;
         productMap[sale.productId].total += sale.totalPrice;
+        const dateStr = sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : new Date(sale.dateOfSale).toLocaleDateString();
+        if (!productMap[sale.productId].dates.includes(dateStr)) {
+          productMap[sale.productId].dates.push(dateStr);
+        }
       }
       const productStats = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
       setCustomProductStats(productStats);
