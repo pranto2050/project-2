@@ -35,9 +35,9 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, title }) => {
   );
 };
 
-// MonthlySalesOutput component
-// Add date column: we need to pass sale dates for each product
+// MonthlySalesOutput component with clickable product rows and detail modal
 interface ProductStatWithDates {
+  productId?: string;
   productName: string;
   quantity: number;
   total: number;
@@ -49,45 +49,131 @@ interface MonthlySalesOutputProps {
   title: string;
   productStats: ProductStatWithDates[];
   summary: { totalProducts: number; totalRevenue: number };
+  allSales?: SaleRecord[]; // Pass all sales for this period
 }
-const MonthlySalesOutput: React.FC<MonthlySalesOutputProps> = ({ open, onClose, title, productStats, summary }) => (
-  <Modal open={open} onClose={onClose} title={title}>
-    <div className="mb-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-        <div className="text-lg font-bold text-cyan-400">Total Products Sold: <span className="text-white">{summary.totalProducts}</span></div>
-        <div className="text-lg font-bold text-green-400">Total Sales: <span className="text-white">৳{summary.totalRevenue.toLocaleString()}</span></div>
+
+const ProductCustomerDetailModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  product: ProductStatWithDates | null;
+  sales: SaleRecord[];
+}> = ({ open, onClose, product, sales }) => {
+  if (!open || !product) return null;
+  // Unique customers by email or mobile
+  const customers = sales
+    .filter(s => s.productName === product.productName)
+    .map(s => ({
+      name: s.customerName || 'N/A',
+      email: s.customerEmail || 'N/A',
+      mobile: s.customerMobile || 'N/A',
+      address: s.customerAddress || 'N/A',
+      date: s.timestamp ? new Date(s.timestamp).toLocaleString() : new Date(s.dateOfSale).toLocaleString(),
+      soldBy: s.soldByEmail || 'N/A',
+      saleId: s.saleId,
+      quantity: s.quantity,
+      total: s.totalPrice
+    }));
+  return (
+    <Modal open={open} onClose={onClose} title={product.productName + ' - Details'}>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Product Photo (now left) */}
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h4 className="text-lg font-bold text-green-400 mb-4">Product Photo</h4>
+          {product.productId ? (
+            <img
+              src={`/images/products/${product.productId}.jpg`}
+              alt={product.productName}
+              className="max-h-64 rounded-xl border border-slate-700 shadow-lg object-contain bg-slate-900"
+              onError={e => { (e.target as HTMLImageElement).src = '/images/products/default.jpg'; }}
+            />
+          ) : (
+            <img
+              src={`/images/products/${encodeURIComponent(product.productName)}.jpg`}
+              alt={product.productName}
+              className="max-h-64 rounded-xl border border-slate-700 shadow-lg object-contain bg-slate-900"
+              onError={e => { (e.target as HTMLImageElement).src = '/images/products/default.jpg'; }}
+            />
+          )}
+        </div>
+        {/* Product Details (now right) */}
+        <div className="flex-1 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h4 className="text-lg font-bold text-cyan-400 mb-2">Product Details</h4>
+          <div className="text-white mb-2"><span className="font-semibold">Name:</span> {product.productName}</div>
+          <div className="text-white mb-2"><span className="font-semibold">Total Sold:</span> {product.quantity}</div>
+          <div className="text-white mb-2"><span className="font-semibold">Total Sales:</span> ৳{product.total.toLocaleString()}</div>
+          <div className="text-white mb-2"><span className="font-semibold">Date(s):</span> {product.dates.join(', ')}</div>
+        </div>
       </div>
-    </div>
-    <div className="overflow-x-auto max-h-[60vh] min-h-[200px]">
-      <div className="overflow-y-auto max-h-[50vh]">
-        <table className="w-full min-w-[700px]">
-          <thead className="sticky top-0 bg-slate-900 z-10">
-            <tr className="border-b border-slate-700">
-              <th className="text-left text-slate-400 font-medium py-2 px-4">Product</th>
-              <th className="text-left text-slate-400 font-medium py-2 px-4">Quantity Sold</th>
-              <th className="text-left text-slate-400 font-medium py-2 px-4">Total Sales</th>
-              <th className="text-left text-slate-400 font-medium py-2 px-4">Date(s)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productStats.length === 0 ? (
-              <tr><td colSpan={4} className="text-center text-slate-400 py-6">No sales in this period.</td></tr>
-            ) : (
-              productStats.map((prod, idx) => (
-                <tr key={prod.productName + idx} className="border-b border-slate-800/50">
-                  <td className="py-2 px-4 text-white font-medium">{prod.productName}</td>
-                  <td className="py-2 px-4 text-blue-400 font-bold">{prod.quantity}</td>
-                  <td className="py-2 px-4 text-green-400 font-bold">৳{prod.total.toLocaleString()}</td>
-                  <td className="py-2 px-4 text-slate-300 text-sm whitespace-pre-line">{prod.dates.join(", ")}</td>
+    </Modal>
+  );
+};
+
+const MonthlySalesOutput: React.FC<MonthlySalesOutputProps> = ({ open, onClose, title, productStats, summary, allSales }) => {
+  const [detailOpen, setDetailOpen] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState<ProductStatWithDates | null>(null);
+  const [productSales, setProductSales] = React.useState<SaleRecord[]>([]);
+
+  const handleRowClick = (prod: ProductStatWithDates) => {
+    setSelectedProduct(prod);
+    if (allSales) {
+      setProductSales(allSales.filter(s => s.productName === prod.productName));
+    } else {
+      setProductSales([]);
+    }
+    setDetailOpen(true);
+  };
+
+  return (
+    <>
+      <Modal open={open} onClose={onClose} title={title}>
+        <div className="mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+            <div className="text-lg font-bold text-cyan-400">Total Products Sold: <span className="text-white">{summary.totalProducts}</span></div>
+            <div className="text-lg font-bold text-green-400">Total Sales: <span className="text-white">৳{summary.totalRevenue.toLocaleString()}</span></div>
+          </div>
+        </div>
+        <div className="overflow-x-auto max-h-[60vh] min-h-[200px]">
+          <div className="overflow-y-auto max-h-[50vh]">
+            <table className="w-full min-w-[700px]">
+              <thead className="sticky top-0 bg-slate-900 z-10">
+                <tr className="border-b border-slate-700">
+                  <th className="text-left text-slate-400 font-medium py-2 px-4">Product</th>
+                  <th className="text-left text-slate-400 font-medium py-2 px-4">Quantity Sold</th>
+                  <th className="text-left text-slate-400 font-medium py-2 px-4">Total Sales</th>
+                  <th className="text-left text-slate-400 font-medium py-2 px-4">Date(s)</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </Modal>
-);
+              </thead>
+              <tbody>
+                {productStats.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center text-slate-400 py-6">No sales in this period.</td></tr>
+                ) : (
+                  productStats.map((prod, idx) => (
+                    <tr
+                      key={prod.productName + idx}
+                      className="border-b border-slate-800/50 cursor-pointer hover:bg-slate-800/40 transition"
+                      onClick={() => handleRowClick(prod)}
+                    >
+                      <td className="py-2 px-4 text-white font-medium">{prod.productName}</td>
+                      <td className="py-2 px-4 text-blue-400 font-bold">{prod.quantity}</td>
+                      <td className="py-2 px-4 text-green-400 font-bold">৳{prod.total.toLocaleString()}</td>
+                      <td className="py-2 px-4 text-slate-300 text-sm whitespace-pre-line">{prod.dates.join(", ")}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Modal>
+      <ProductCustomerDetailModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        product={selectedProduct}
+        sales={productSales}
+      />
+    </>
+  );
+};
 
 interface SaleRecord {
   saleId: string;
