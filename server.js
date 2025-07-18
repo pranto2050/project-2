@@ -344,6 +344,16 @@ app.post('/api/administrators', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to save administrator' });
   }
 });
+// Delete administrator by ID
+app.delete('/api/administrators/:id', async (req, res) => {
+  const administrators = await readJsonFile(FILES.administrators);
+  const filteredAdmins = administrators.filter(a => a.id !== req.params.id);
+  if (await writeJsonFile(FILES.administrators, filteredAdmins)) {
+    res.json({ success: true, message: 'Administrator deleted successfully' });
+  } else {
+    res.status(500).json({ success: false, message: 'Failed to delete administrator' });
+  }
+});
 
 // Sales API
 app.get('/api/sales', async (req, res) => {

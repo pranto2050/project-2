@@ -24,5 +24,17 @@
     "name": "Accessories",
     "description": "Internet installation accessories",
     "createdDate": "2025-07-16"
+  },
+  {
+    "id": "cat-1752844142664",
+    "name": "sad",
+    "description": "",
+    "createdDate": "2025-07-18"
+  },
+  {
+    "id": "cat-1752846668910",
+    "name": "ffg",
+    "description": "",
+    "createdDate": "2025-07-18"
   }
 ]

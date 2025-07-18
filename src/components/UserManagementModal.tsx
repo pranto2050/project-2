@@ -25,6 +25,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -133,17 +134,23 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
 
     if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
+      setLoading(true);
+      setError('');
+      setSuccess('');
       try {
         const success = await deleteUser(user.id);
         if (success) {
           setSuccess(`User ${user.name} deleted successfully`);
-          await loadUsers();
+          // Instantly update UI for better experience
+          setUsers(prev => prev.filter(u => u.id !== user.id));
         } else {
           setError('Failed to delete user');
         }
       } catch (error) {
         console.error('Failed to delete user:', error);
         setError('Failed to delete user');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -201,13 +208,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         {/* Content */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
-          {/* Success/Error Messages */}
+          {/* Success/Error/Loading Messages */}
+          {loading && (
+            <div className="flex items-center space-x-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 px-4 py-3 rounded-lg mb-4">
+              <span className="spinner" />
+              <span>Processing...</span>
+            </div>
+          )}
           {error && (
             <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-4">
               {error}
             </div>
           )}
-          
           {success && (
             <div className="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg mb-4">
               {success}

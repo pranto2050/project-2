@@ -9,21 +9,21 @@
     "id": "admin-1752640309387"
   },
   {
-    "name": "Md.Prannto Islam",
-    "email": "pranto@gmail.com",
-    "password": "pranto",
-    "role": "admin",
-    "points": 0,
-    "purchaseHistory": [],
-    "id": "admin-1752645271660"
-  },
-  {
-    "name": "Sanzit",
-    "email": "sanzit@gmail.com",
-    "password": "s",
+    "name": "Santo",
+    "email": "as@gmail.com",
+    "password": "a",
     "role": "seller",
     "points": 0,
     "purchaseHistory": [],
-    "id": "admin-1752673287648"
+    "id": "admin-1752846190949"
+  },
+  {
+    "name": "sad",
+    "email": "asd@gnail.com",
+    "password": "a",
+    "role": "admin",
+    "points": 0,
+    "purchaseHistory": [],
+    "id": "admin-1752846525713"
   }
 ]

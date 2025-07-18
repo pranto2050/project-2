@@ -120,6 +120,12 @@ class ApiService {
     });
   }
 
+  async deleteAdministrator(id: string) {
+    return this.request(`/administrators/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Sales API
   async getSales() {
     return this.request('/sales');

@@ -118,8 +118,8 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
     let result = await apiService.deleteUser(userId);
     if (!result.success) {
       // If not found in users, try administrators
-      // Note: You might need to add deleteAdministrator to your API
-      console.log('User not found in regular users, might be an administrator');
+      // Try to delete from administrators
+      result = await apiService.deleteAdministrator(userId);
     }
     return result.success;
   } catch (error) {
